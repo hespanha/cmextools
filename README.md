@@ -5,25 +5,26 @@
 * [Description](#description)
 * [Installation](#installation)
 * [Usage](#usage)
+* [Issues](#issues)
 * [Contact Information](#contact-information)
 * [License Information](#license-information)
 
 ## Description
 
-The *CmexTools* Matlab toolbox is part of the TensCalc Matlab toolbox
+The *CmexTools* Matlab toolbox is part of the *TensCalc* Matlab toolbox
 but is useful on its own right. It is used to create a set of gateway
-cmex functions (which we call `cmex-functions`) that internally call C
-functions (which we call the `c-functions`) that actually perform the
+cmex functions (which we call *cmex-functions*) that internally call C
+functions (which we call the *c-functions*) that actually perform the
 necessary computations.
 
 The inputs an outputs to the cmex-functions are specified by a
-`template` that specifies the types and sizes of the input-output
+*template* that specifies the types and sizes of the input-output
 matlab arrays.  The sizes may be left as variables, which are
 determined at run-time, in which case the "unknown" sizes must also be
 passed as inputs to the c-functions. 
 
 The cmex-functions may (optionally) be encapsulated as a matlab
-`class`, which is automatically created. When the c-functions are part
+*class*, which is automatically created. When the c-functions are part
 of a dynamic library, this permits the cmex-functions to share
 variables that are retained across multiple calls to the
 cmex-functions.
@@ -63,7 +64,7 @@ To install
 
 1. Make sure that you Matlab's `mex` function properly configured.
 
-	* In OSX, `mex` should be configured to use `Xcode with Clang` for
+	* In OSX, `mex` should be configured to use *Xcode with Clang* for
 	  C language compilation.  To verify that this is so, type at the
 	  Matlab prompt:
 	  
@@ -73,8 +74,10 @@ To install
 	  
 	  You should see something like
 	  
-	  > >> mex -setup C
+	  > \>\> mex -setup C
+	  >
 	  > MEX configured to use 'Xcode with Clang' for C language compilation.
+	  >
       > Warning: The MATLAB C and Fortran API has changed to support MATLAB
 	  >	         variables with more than 2^32-1 elements. In the near future
 	  >	         you will be required to update your code to utilize the
@@ -89,8 +92,8 @@ To install
 	  mex -setup C
 	  ```
 	
-	* In Microsoft Windows, `mex` should be configured for `Microsoft
-	  Visual C++ 2015 Professional (C)` for C language
+	* In Microsoft Windows, `mex` should be configured for *Microsoft
+	  Visual C++ 2015 Professional (C)* for C language
 	  compilation.  To verify that this is so, type at the Matlab
 	  prompt:
 	
@@ -98,26 +101,47 @@ To install
 	  mex -setup C
 	  ```
 	  
-	  `Microsoft Visual C++ 2015 Professional (C)` is a free download from 
+	  *Microsoft Visual C++ 2015 Professional (C)* is a free download from 
 	  https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 
 
-2. Download the toolbox which should contain, at least, the following
-   folders
+2. Install [FunParTools](https://github.ucsb.edu/hespanha/funpartools) if you have not yet done so.
 
-  * cmextools/lib
-  * cmextools/examples
+3. Download the *CmexTools* using one of the following options:
+
+	1. downloading it as a zip file from
+		https://github.ucsb.edu/hespanha/cmextools/archive/master.zip
+	   and unziping to an appropriate location
+
+	2. cloning this repository with Git, e.g., using the shell command
+	   ```sh
+	   svn checkout https://github.ucsb.edu/hespanha/cmextools.git
+	   ```
+	  
+	3. checking out this repository with svn, e.g., using the shell command
+	   ```sh
+       git clone https://github.ucsb.edu/hespanha/cmextools.git
+       ```
+
+	The latter two options are recommended because you can
+    subsequently use `svn update` or `git pull` to upgrade *CmexTools*
+    to the latest version.
+
+	After this, you should have at least the following folders:
+
+	* cmextools/lib
+	* cmextools/examples
 
 
-3. Add `cmextools/lib` to your matlab path. 
+4. Add `cmextools/lib` to your matlab path. 
    From inside the folder `cmextools/lib`, this can be done with
 
-  ```matlab
-  addpath(fileparts(which('createGateway')));
-  savepath
-  ```
+	```matlab
+	addpath(fileparts(which('createGateway')));
+	savepath
+	```
 
-4. To test if all is well, go to `cmextools/examples` and execute
+5. To test if all is well, go to `cmextools/examples` and execute
 
 	```matlab
 	templateFromFile
@@ -127,7 +151,7 @@ To install
 	
 ## Usage
 
-The `templates` used to specify the inputs an outputs to the
+The *templates* used to specify the inputs an outputs to the
 cmex-functions can take the form of a file or a matlab structure. 
 
 A typical template file is of the form:
@@ -247,6 +271,19 @@ Full documentation for this function can be found with
 ```matlab
 	createGateway help
 ```
+
+## Issues
+
+* While most Matlab scripts are agnostic to the underlying operating
+  systems (OSs), the use of `mex` functions depends heavily on the
+  operating systems.
+
+  Our goal is to build a toolbox that works across multiple OSs; at
+  least under OSX, linux, and Microsft Windows. However, most of our
+  testing was done under OSX so one should expect some bugs under the
+  other OSs. Sorry about that.
+
+* The next biggest issue is the relatively poor documentation.
 
 ## Contact Information
 
