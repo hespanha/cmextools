@@ -11,7 +11,7 @@
 
 ## Description
 
-The *CmexTools* Matlab toolbox is part of the *TensCalc* Matlab toolbox
+The *CmexTools* *Matlab* toolbox is part of the *TensCalc* *Matlab* toolbox
 but is useful on its own right. It is used to create a set of gateway
 cmex functions (which we call *cmex-functions*) that internally call C
 functions (which we call the *c-functions*) that actually perform the
@@ -54,7 +54,7 @@ Several options are possible for how the cmex-functions call the c-function
 
 ## Installation
 
-This toolbox supports Matlab running under:
+The *CmexTools* toolbox supports *Matlab* running under:
 
 - OSX (tested extensivly)
 - linux (tested lightly)
@@ -62,11 +62,11 @@ This toolbox supports Matlab running under:
 
 To install
 
-1. Make sure that you Matlab's `mex` function properly configured.
+1. Make sure that you *Matlab*'s `mex` function properly configured.
 
 	* In OSX, `mex` should be configured to use *Xcode with Clang* for
 	  C language compilation.  To verify that this is so, type at the
-	  Matlab prompt:
+	  *Matlab* prompt:
 	  
 	  ```matlab
 	  mex -setup C
@@ -85,7 +85,7 @@ To install
 	  >	         http://www.mathworks.com/help/matlab/matlab_external/upgrading-mex-files-to-use-64-bit-api.html.
 
 	* In linux, `mex` should be configured to use `gcc` for C language
-	  compilation.  To verify that this is so, type at the Matlab
+	  compilation.  To verify that this is so, type at the *Matlab*
 	  prompt:
 	
 	  ```matlab
@@ -94,7 +94,7 @@ To install
 	
 	* In Microsoft Windows, `mex` should be configured for *Microsoft
 	  Visual C++ 2015 Professional (C)* for C language
-	  compilation.  To verify that this is so, type at the Matlab
+	  compilation.  To verify that this is so, type at the *Matlab*
 	  prompt:
 	
 	  ```matlab
@@ -129,8 +129,8 @@ To install
 
 	After this, you should have at least the following folders:
 
-	* cmextools/lib
-	* cmextools/examples
+	* `cmextools/lib`
+	* `cmextools/examples`
 
 
 4. Add `cmextools/lib` to your matlab path. 
@@ -215,20 +215,20 @@ these variable will be created and pointers to the storage space of
 these variables will be available to the c-function.
 
 Each entry of the `inputs` and `outputs` section is of the form
-   {matlab type} {variable name} [ {array size} ]
+   `{matlab type} {variable name} [ {array size} ]`
 
-The {array size} may contain specific numerical values, or
+The `{array size}` may contain specific numerical values, or
 size-variable names. When the same size-variable appears multiple
-times, the C gateway function will check for consistency.
-The size-variable will be available with the C gateway with type `mwSize`.
-In the `inputs` section, the {array size} may contain the symbol `~`
+times, the C gateway function will check for consistency.  The
+size-variable will be available with the C gateway with type `mwSize`.
+In the `inputs` section, the `{array size}` may contain the symbol `~`
 for some of the dimensions, which means that the dimension will not be
 checked by the gateway function.
-In the `outputs` section, the {array size} may contain valid C
-expressions involving size-variables.
-If the {array size} of the outputs section is equal to `~`,
-then the C gateway function will not allocate storage space,
-which will have to be done by the C function.
+
+In the `outputs` section, the `{array size}` may contain valid C
+expressions involving size-variables.  If the `{array size}` of the
+outputs section is equal to `~`, then the C gateway function will not
+allocate storage space, which will have to be done by the C function.
 
 The (optional) `preprocess` section defines matlab code that
 will be executed after the cmex function is created, but before
@@ -240,7 +240,7 @@ the `defines`, but before the gateway function.
 
 The (optional) `include` section defines functions that
 should be included (via `#include` directives) just before the gateway function.
-more than one `include` section are possible, resulting in multiple
+More than one `include` section are possible, resulting in multiple
 includes.
 
 The `Cfunction` statement defines the name of the
@@ -274,7 +274,7 @@ Full documentation for this function can be found with
 
 ## Issues
 
-* While most Matlab scripts are agnostic to the underlying operating
+* While most *Matlab* scripts are agnostic to the underlying operating
   systems (OSs), the use of `mex` functions depends heavily on the
   operating systems.
 
