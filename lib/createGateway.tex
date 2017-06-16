@@ -1,0 +1,352 @@
+\begin{quote}
+  \texttt{[...]=createGateway('parameter name 1',value,'parameter name 2',value,...);}
+\end{quote}
+Creates a set of gateway cmex functions (which we call \textbf{cmex-functions})
+that internally call C functions (which we call the \textbf{c-functions}) that
+actually perform the necessary computations.
+ 
+The inputs an outputs to the cmex-functions are specified by a \textbf{template}
+that specifies the types and sizes of the input-output matlab arrays.
+The sizes may be left as variables, which are determined at run-time,
+in which case the "unknown" sizes must also be passed as inputs to the
+c-functions.
+ 
+The cmex-functions may (optionally) be encapsulated as a matlab \textbf{class},
+which is automatically created. When the c-functions are part of a dynamic library,
+this permits the cmex-functions to share variables that are retained across
+multiple calls to the cmex-functions.
+ 
+Several options are possible for how the cmex-functions call the c-function
+1) The c-functions may be included directly into the mex-functions code;
+   and called directly from the gateway function.
+   In this case, source code must be provided for each c-function to be
+   included in the gateway function using a \#include preprocessor directive.
+2) The c-functions are part of a dynamic library that is linked to the
+   cmex-functions in run time.
+   In this case, source code for the dynamic Library must be provided as a single
+   file, which will be compiled as a dynamic library.
+3) Each c-function is compiled as a standalone executable, that is executed from
+   within the corresponding cmex-function, using the system() command.
+   Data is passed between the cmex-function and the c-function by writing to a file.
+4) All c-functions are compiled to a standalone executable, which acts a server
+   that calls the c-functions at request of the client cmex-functions.
+   Data is passed between clients and server through a socket, which permits
+   clients and server to run on different computers.
+ 
+Typically, templates are of the form:
+ 
+\#ifdef createGateway
+MEXfunction MEXmtimes
+Cfunction   Cmtimes
+method      mtimes
+include     Cmtimes.c
+ 
+inputs
+	double X1 [m,k]
+	uint32 S1 [1]
+	double X2 [k,n]
+	uint32 S2 [1]
+ 
+outputs
+	double Y [m,n]
+ 
+preprocess(V1,V2)
+ \{ ... Matlab code ...\}
+ 
+MEXfunction MEXplus
+Cfunction   Cplus
+method      plus
+include     Cplus.c
+ 
+inputs
+	double X1 [m,n]
+	uint32 S1 [1]
+	double X2 [m,n]
+	uint32 S2 [1]
+ 
+outputs
+	double Y [m,n]
+ 
+preprocess(V1,V2)
+ \{ ... Matlab code ...\}
+ 
+\#endif
+ 
+void Cmtimes(double \textbf{X1,uint32\_t }S1,double \textbf{X2,uint32\_t }S2,double *Y,
+              mwSize m,mwSize k,mwSize n)
+\{ ... C code ... \}
+ 
+void Cplus(double \textbf{X1,uint32\_t }S1,double \textbf{X2,uint32\_t }S2,double *Y,
+           mwSize mmwSize n)
+\{ ... C code ... \}
+ 
+The 'MEXfunction' statement defines the name of the cmex-function
+to be created. The same template may define several cmex-functions,
+each definition starts with a 'MEXfunction' statement.
+ 
+The 'inputs' section defines inputs to the cmex-function. Pointers to
+the storage space of these variables will be available to the c-function.
+ 
+The 'outputs' section defines the outputs of the cmex-function,
+these variable will be created and pointers to the storage space of
+these variables will be available to the c-function.
+  
+Each entry of the 'inputs' and 'outputs' section is of the form
+   \{matlab type\} \{variable name\} [ \{array size\} ]
+ 
+The \{array size\} may contain specific numerical values, or
+size-variable names. When the same size-variable appears multiple
+times, the C gateway function will check for consistency.
+The size-variable will be available with the C gateway with type 'mwSize'.
+In the 'inputs' section, the \{array size\} may contain the symbol '~'
+for some of the dimensions, which means that the dimension will not be
+checked by the gateway function.
+In the 'outputs' section, the \{array size\} may contain valid C
+expressions involving size-variables.
+If the \{array size\} of the outputs section is equal to '~',
+then the C gateway function will not allocate storage space,
+which will have to be done by the C function.
+ 
+The (optional) 'preprocess' section defines matlab code that
+will be executed after the cmex function is created, but before
+the gateway function is written to the file. The code will be evaluated
+as a function with the given arguments as input parameters.
+This matlab code may be used to generate C code. When this code
+is appended to the file 'cmexfunction', it will appear after
+the 'defines', but before the gateway function.
+ 
+The (optional) 'include' section defines functions that
+should be included (via \#include directives) just before the gateway function.
+more than one 'include' section are possible, resulting in multiple
+includes.
+ 
+The 'Cfunction' statement defines the name of the
+C function that carries out the computations. This function will
+be called from inside the gateway function with arguments determined
+from the 'inputs' section, including:
+  1) pointers to the input variables (data portion)
+  2) pointers to the output variables (data portion)
+     (automatically allocated)
+  3) variables with array sizes
+ 
+The (optional) method statement defines the name of the method
+that calls the cmex function, when the parameter 'className' is non-empty,
+in which case a matlab class is created to call all the cmex-functions.
+ 
+The initial \#ifdef and the final \#endif are optional. When present,
+only the portion of the file between these commands is processed,
+otherwise the whole file is processed. 
+
+\paragraph{Input parameters:}
+
+\begin{itemize}
+\item \texttt{verboseLevel} [default \texttt{0}]
+
+   Level of verbose for debug outputs (\texttt{0} - for no debug output)
+
+\item \texttt{parametersStructure} [default \texttt{''}]
+
+   Structure whose fields are used to initialize parameters   
+not present in the list of parameters passed to the function.   
+This structure should contains fields with names that match   
+the name of the parameters to be initialized.
+
+\item \texttt{pedigreeClass} [default \texttt{''}]
+
+   When nonempty, the function outputs are saved to a file set.   
+All files in the set will be characterized by a 'pedigree',   
+which decribes all the input parameters that were used in the script.   
+This variable contains the name of the file class and may include a path.   
+See also createPedigree
+
+\item \texttt{executeScript} [default \texttt{'yes'}] taking values in [\texttt{'yes'},\texttt{'no'},\texttt{'asneeded'}]
+
+   Determines whether or not the body of the function should be executed:   
+\begin{itemize}
+      
+\item \texttt{yes} - the function body should always be executed.      
+\item \texttt{no}  - the function body should never be executed and therefore the      
+          function returns after processing all the input parameters.      
+\item \texttt{asneeded} - if a pedigree file exists that match all the input parameters      
+               (as well as all the parameters of all 'upstream' functions)      
+               the function body is not executed, otherwise it is execute.\end{itemize}
+
+
+\item \texttt{template}
+
+   Filename with the template function.   
+    
+Alternatively, templates can be given as a structure array of the form:   
+ template=struct(...   
+            'MEXfunction',\{\},... \% string = name of the cmex function to be created   
+            'Cfunction',\{\},...   \% string = name of the C function that carries out the computation   
+            'method',\{\},...      \% string = name of the matlab method that call the cmex function   
+                                   \%          only used when 'className' is non-empty   
+            'inputs',struct(...      
+                'type',\{\},...    \% string   
+                'name',\{\},...    \% cell-array of strings (one per dimension)   
+                'sizes',\{\}),...  \% cell-array of strings/or numeric array (one per dimension)   
+            'outputs',struct(...  \% string   
+                'type',\{\},...    \% string   
+                'name',\{\},...    \% cell-array of strings (one per dimension)   
+                'sizes',\{\}),...  \% cell-array of strings/or numeric array (one per dimension)   
+            'preprocess',\{\}..    \% strings (starting with parameters in parenthesis)   
+            'includes',\{\}..      \% cell-array of strings (one per file)   
+            );   
+in which the different fields of the structure map directly   
+to the corresponding sections of the template file.
+
+\item \texttt{preprocessParameters} [default \texttt{\{\}}]
+
+   Cell array containing the input parameters to the function(s) defined   
+in the 'preprocess' section(s).
+
+\item \texttt{defines} [default \texttt{\{\}}]
+
+   Matlab structure that specifies a set of \#define   
+preprocessor directives that will be included before the   
+the \#include directive and also before the gateway function   
+These directives can be used to pass (hardcoded) parameters.   
+Should be of the form:   
+      defines.name1 = \{string or scalar\}   
+      defines.name2 = \{string or scalar\}   
+     .... 
+
+\item \texttt{callType} [default \texttt{'include'}] taking values in [\texttt{'include'},\texttt{'dynamicLibrary'},\texttt{'standalone'},\texttt{'client-server'}]
+
+   Determines how the gateway function should call the C function that   
+actually performs the computations. It can take the following values   
+'include' - The gateway function should call 'Cfunction',   
+              which must have been defined in the 'includes'   
+              that precede the declaration of the gateway function.   
+              The C function will thus be statically linked to the   
+              gateway function.   
+'dynamicLibrary' - Each time the gateway function is called, it:   
+              (1) The first time a gateway function is called it   
+                  loads the dynamic library defined by 'dynamicLibrary'   
+                  (this step is not needed in subsequent calls).   
+              (2) calls 'Cfunction' that must exist within the library.   
+              (3) does NOT unload the dynamic library   
+              A mexFunction   
+                 function rc=dynamicLibrary\_load(boolean)   
+              is automatically created to load or unload the library   
+              It should be called (with boolean=false)   
+              when the gateways are no longer needed.   
+              When the cmex functions are incorporated into a matlab class   
+              (see 'className' parameters), the creating of the matlab   
+              object automatically calls dynamicLibrary\_load(true);   
+              BUT the destruction of the object does not call   
+              dynamicLibrary\_load(false), which should be done manually.;   
+              ATTENTION: the gateway will CRASH matlab if called after   
+              the library is unloaded.   
+'standalone' - The gateway function performs the following tasks:   
+              (1) writes all input variables to a file,   
+              (2) calls a standalone executable that reads the inputs   
+                  and writes the outputs to a file   
+              (3) reads the outputs from the file created by the   
+                  standalone executable and returns them   
+              The standalone executable is automatically created   
+              and calls the 'Cfunction,' which are expected to be defined   
+              in the 'includes'.   
+              The file IO introduces large overhead, but it is useful for   
+              debugging and code profiling.   
+'client-server' - The gateway function performs the following tasks:   
+              (1) opens an I/O pipe to communicate with a server that   
+                  performs the computations   
+              (2) writes all input variables to the pipe,   
+              (3) reads the outputs from the pipe and returns them   
+              The server executable is automatically created   
+              based on 'CfunctionsSource,' which is expected to be defined   
+              When 'className' is defined, a method 'upload' is   
+              automatically created to upload/compile/execute the server   
+              in 'serverAddress' using ssh.   
+              ATTENTION: Currently the serverIP and port are hardcoded   
+                         in the mex files.   
+ATTENTION: for both dynamicLibrary types, the types for the parameters   
+           of 'Cfunction' are not checked by the compiler.
+
+\item \texttt{CfunctionsSource} [default \texttt{''}]
+
+   Name of a .c source file that contains the code for all the c-functions.   
+This parameter is used only when 'callType' has one of the values:   
+'dynamicLibrary'      - source code for the dynamic library   
+'client-server'       - source code that will be included in the    
+                          server executable.
+
+\item \texttt{folder} [default \texttt{'.'}]
+
+   Path to the folder where the files will be created.   
+Needs to be in the Matlab path.
+
+\item \texttt{dynamicLibrary} [default \texttt{''}]
+
+   Name of the dynamic library (without extension) to be created.   
+This parameter is used only when 'callType'='dynamicLibrary'.
+
+\item \texttt{serverProgramName} [default \texttt{''}]
+
+   Name of the executable file for the server executable.   
+This parameter is used only when 'callType'='client-server'.
+
+\item \texttt{serverAddress} [default \texttt{'localhost'}]
+
+   IP address (or name) of the server.   
+This parameter is used only when 'callType'='client-server'.
+
+\item \texttt{port} [default \texttt{1968}]
+
+   Port number for the socket that connects client and server.   
+This parameter is used only when 'callType'='client-server'.
+
+\item \texttt{compileGateways} [default \texttt{true}] taking values in [\texttt{true},\texttt{false}]
+
+   When 'true' the gateway functions are compiled using 'cmex'.
+
+\item \texttt{compileLibrary} [default \texttt{true}] taking values in [\texttt{true},\texttt{false}]
+
+   When 'true' the dynamicLibrary is compiled using 'gcc'.   
+This parameter is used only when 'callType'='dynamicLibrary'.
+
+\item \texttt{compileStandalones} [default \texttt{true}] taking values in [\texttt{true},\texttt{false}]
+
+   When 'true' the standalone/server executable is compiled using 'gcc'.   
+This parameter is used only when 'callType' has one of the values:   
+   'standalone' or 'client-server'
+
+\item \texttt{compilerOptimization} [default \texttt{'-Ofast'}] taking values in [\texttt{'-O0'},\texttt{'-O1'},\texttt{'-O2'},\texttt{'-O3'},\texttt{'-Ofast'}]
+
+   Optimization flag used for compilation.   
+Only used when compileGateways, compileLibrary, or compileStandalones
+
+\item \texttt{targetComputer} [default \texttt{'maci64'}] taking values in [\texttt{'maci64'},\texttt{'glnxa64'},\texttt{'pcwin64'}]
+
+   OS where the mex files will be compiled.
+
+\item \texttt{serverComputer} [default \texttt{'maci64'}] taking values in [\texttt{'maci64'},\texttt{'glnxa64'},\texttt{'pcwin64'}]
+
+   OS where the server will be compiled.   
+This parameter is used only when 'callType'='client-server'.
+
+\item \texttt{className} [default \texttt{''}]
+
+   When non empty, a class is created that encapsulates all the   
+gateway functions as methods.   
+When a dynamicLibrary is used, the class creation loads the library   
+and the class delete unloads the library.
+
+\item \texttt{classHelp} [default \texttt{''}]
+
+   When 'className' is non empty, this string or string array are   
+included in the classdef file to provide an help message.
+
+\end{itemize}
+
+\paragraph{Outputs:}
+
+\begin{itemize}
+\item \texttt{statistics}
+
+   Structure with various statistics, include the file sizes and compilations times
+\end{itemize}
+
+
