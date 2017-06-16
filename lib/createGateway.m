@@ -136,7 +136,7 @@ declareParameter(...
         ' '
         'The (optional) ''include'' section defines functions that'
         'should be included (via ''#include'' directives) just before the gateway function.';
-        'More than one ''include'' section are possible, resulting in multiple';
+        'More than one ''include'' section is possible, resulting in multiple';
         'includes.'
         ' '
         'The ''Cfunction'' statement defines the name of the'
