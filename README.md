@@ -107,7 +107,7 @@ To install
 
 2. Install [FunParTools](https://github.ucsb.edu/hespanha/funpartools) if you have not yet done so.
 
-3. Download the *CmexTools* using one of the following options:
+3. Download *CmexTools* using one of the following options:
 
 	1. downloading it as a zip file from
 		https://github.ucsb.edu/hespanha/cmextools/archive/master.zip
