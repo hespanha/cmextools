@@ -105,22 +105,22 @@ To install
 	  https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 
 
-2. Install [FunParTools](https://github.ucsb.edu/hespanha/funpartools) if you have not yet done so.
+2. Install [FunParTools](../../../funpartools) if you have not yet done so.
 
 3. Download *CmexTools* using one of the following options:
 
 	1. downloading it as a zip file from
-		https://github.ucsb.edu/hespanha/cmextools/archive/master.zip
+		https://github.com/hespanha/cmextools/archive/master.zip
 	   and unziping to an appropriate location
 
 	2. cloning this repository with Git, e.g., using the shell command
 	   ```sh
-	   svn checkout https://github.ucsb.edu/hespanha/cmextools.git
+	   svn checkout https://github.com/hespanha/cmextools.git
 	   ```
 	  
 	3. checking out this repository with svn, e.g., using the shell command
 	   ```sh
-       git clone https://github.ucsb.edu/hespanha/cmextools.git
+       git clone https://github.com/hespanha/cmextools.git
        ```
 
 	The latter two options are recommended because you can
@@ -287,7 +287,7 @@ Full documentation for this function can be found with
 
 ## Contact Information
 
-Joao Hespanha (hespanha@ucsb.edu)
+Joao Hespanha (hespanha@ece.ucsb.edu)
 
 http://www.ece.ucsb.edu/~hespanha
 
