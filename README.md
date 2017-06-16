@@ -74,6 +74,7 @@ To install
 	  You should see something like
 	  
 	  > \>\> mex -setup C
+	  >
 	  > MEX configured to use 'Xcode with Clang' for C language compilation.
       > Warning: The MATLAB C and Fortran API has changed to support MATLAB
 	  >	         variables with more than 2^32-1 elements. In the near future
