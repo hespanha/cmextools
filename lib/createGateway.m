@@ -423,7 +423,16 @@ if ismember(callType,{'dynamicLibrary','client-server'}) && isempty(CfunctionsSo
           callType);
 end
 
-compilerOptimization=[compilerOptimization,' -msse -msse2 -msse3 -msse4 -msse4.1'];
+switch lower(computer)
+  case 'maci64'
+    compilerOptimization=[compilerOptimization,' -msse -msse2 -msse3 -msse4 -msse4.1'];
+  case 'glnxa64'
+    compilerOptimization=[compilerOptimization,' -msse -msse2 -msse3 -msse4 -msse4.1'];
+  case 'pcwin64'
+    compilerOptimization=[compilerOptimization,' /arch:sse2'];
+  otherwise
+    error('unsupported computer ''%s''\n',computer);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Read template
@@ -694,8 +703,18 @@ if ~isempty(className) && ~strcmp(callType,'client-server')
     %% create compile method
     fprintf(fic,'     function compile(obj,compilerOptimization)\n');
     fprintf(fic,'       if nargin<2,compilerOptimization=''%s'';end\n',compilerOptimization);
-    fprintf(fic,'       compilerOptimization=[compilerOptimization,'' -msse -msse2 -msse3 -msse4 -msse4.1''];');
 
+    fprintf(fic,'       switch lower(computer)\n');
+    fprintf(fic,'         case ''maci64''\n');
+    fprintf(fic,'           compilerOptimization=[compilerOptimization,'' -msse -msse2 -msse3 -msse4 -msse4.1''];\n');
+    fprintf(fic,'         case ''glnxa64''\n');
+    fprintf(fic,'           compilerOptimization=[compilerOptimization,'' -msse -msse2 -msse3 -msse4 -msse4.1''];\n');
+    fprintf(fic,'         case ''pcwin64''\n');
+    fprintf(fic,'           compilerOptimization=[compilerOptimization,'' /arch:sse2''];\n');
+    fprintf(fic,'         otherwise\n');
+    fprintf(fic,'           error(''unsupported computer ''''%%s''''\\n'',computer);\n');
+    fprintf(fic,'       end\n');
+    
     % library
     [cmd,script]=libraryCompile(compilerOptimization,...
                                 CfunctionsSource,fsfullfile(folder,dynamicLibrary),verboseLevel);
@@ -879,7 +898,7 @@ function template=computeCode(template,callType,dynamicLibrary,folder,...
         cfilename=sprintf('%s.c',serverProgramName);
         fmid=fopen(cfilename,'w');
         if fmid<0
-            error('createGateway: Unable to create header file ''%s''\n',cfilename);
+            error('createGateway: Unable to create C file ''%s''\n',cfilename);
         end
         fprintf(fmid,'/* Created by script createGateway.m on %s */\n\n',datestr(now));
         includeFile(fmid,'GPL.c');
@@ -1037,7 +1056,7 @@ function template=computeCode(template,callType,dynamicLibrary,folder,...
             cfilename=sprintf('%s_salone.c',template(t).MEXfunction);
             fmid=fopen(cfilename,'w');
             if fmid<0
-                error('createGateway: Unable to create header file ''%s''\n',cfilename);
+                error('createGateway: Unable to create C file ''%s''\n',cfilename);
             end
             fprintf(fmid,'/* Created by script createGateway.m on %s */\n\n',datestr(now));
             includeFile(fmid,'GPL.c');
@@ -1392,9 +1411,10 @@ function writeGateway(cmexname,Cfunction,...
        fprintf('creating function %s.c (%s)\n',cmexname,Cfunction);
     end
     cfilename=fsfullfile(folder,sprintf('%s.c',cmexname));
+    
     fid=fopen(cfilename,'w');
     if fid<0
-        error('createGateway: Unable to create header file ''%s''\n',cfilename);
+        error('createGateway: Unable to create gateway file ''%s''\n',cfilename);
     end
     fprintf(fid,'/* Created by script createGateway.m on %s */\n\n',datestr(now));
     includeFile(fid,'GPL.c');
