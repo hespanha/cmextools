@@ -19,11 +19,11 @@ necessary computations.
 
 The inputs an outputs to the cmex-functions are specified by a
 *template* that specifies the types and sizes of the input-output
-matlab arrays.  The sizes may be left as variables, which are
+*Matlab* arrays.  The sizes may be left as variables, which are
 determined at run-time, in which case the "unknown" sizes must also be
 passed as inputs to the c-functions. 
 
-The cmex-functions may (optionally) be encapsulated as a matlab
+The cmex-functions may (optionally) be encapsulated as a *Matlab*
 *class*, which is automatically created. When the c-functions are part
 of a dynamic library, this permits the cmex-functions to share
 variables that are retained across multiple calls to the
@@ -129,16 +129,15 @@ To install
 
 	After this, you should have at least the following folders:
 
+	* `cmextools`
 	* `cmextools/lib`
 	* `cmextools/examples`
 
 
-4. Add `cmextools/lib` to your matlab path. 
-   From inside the folder `cmextools/lib`, this can be done with
+4. Enter `cmextools` and execute the following command at the *Matlab* prompt:
 
 	```matlab
-	addpath(fileparts(which('createGateway')));
-	savepath
+	install_cmextools
 	```
 
 5. To test if all is well, go to `cmextools/examples` and execute
@@ -152,7 +151,7 @@ To install
 ## Usage
 
 The *templates* used to specify the inputs an outputs to the
-cmex-functions can take the form of a file or a matlab structure. 
+cmex-functions can take the form of a file or a *Matlab* structure. 
 
 A typical template file is of the form:
 
@@ -230,11 +229,11 @@ expressions involving size-variables.  If the `{array size}` of the
 outputs section is equal to `~`, then the C gateway function will not
 allocate storage space, which will have to be done by the C function.
 
-The (optional) `preprocess` section defines matlab code that
+The (optional) `preprocess` section defines *Matlab* code that
 will be executed after the cmex function is created, but before
 the gateway function is written to the file. The code will be evaluated
 as a function with the given arguments as input parameters.
-This matlab code may be used to generate C code. When this code
+This *Matlab* code may be used to generate C code. When this code
 is appended to the file `cmexfunction`, it will appear after
 the `defines`, but before the gateway function.
 
@@ -254,7 +253,7 @@ from the `inputs` section, including:
 
 The (optional) method statement defines the name of the method
 that calls the cmex function, when the parameter `className` is non-empty,
-in which case a matlab class is created to call all the cmex-functions.
+in which case a *Matlab* class is created to call all the cmex-functions.
 
 The initial `#ifdef` and the final `#endif` are optional. When present,
 only the portion of the file between these commands is processed,
