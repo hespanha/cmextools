@@ -295,6 +295,23 @@ declareParameter(...
         });
 
 declareParameter(...
+    'VariableName','absolutePath',...
+    'DefaultValue',true,...
+    'AdmissibleValues',{true,false},...
+    'Description', {
+        'When ''true'' the the cmex functions use an absolute path to open';
+        'the dynamic library, which means that the dynamic library cannot';
+        'be moved away from the folder where it was created.';
+        ' '
+        'When ''false'' no path information about the dynamic library is'
+        'included in the cmex function, which must then rely on the OS-specific';
+        'method used to find dynamic libraries. See documentation of ''dlopen'''
+        'for linux and OSX or ''LoadLibrary'' for Microsoft Windows.'
+        ' '
+        'This parameter is used only when ''callType''=''dynamicLibrary''.'
+        });
+
+declareParameter(...
     'VariableName','serverProgramName',...
     'DefaultValue','',...
     'Description', {
@@ -423,6 +440,44 @@ if ismember(callType,{'dynamicLibrary','client-server'}) && isempty(CfunctionsSo
           callType);
 end
 
+%% Compute class folder
+if isempty(className)
+    classFolder='';
+else
+    if ~isempty(fileparts(className))
+        error('className "%s" should not include a path. Use ''folder'' instead.\n',className);
+    end
+    classFolder=fsfullfile(folder,sprintf('@%s',className));
+    if ~exist(classFolder,'dir')
+        mkdir(classFolder);
+        fprintf('createGateway: class folder @%s does not exist, creating it\n',className);
+    end
+end
+
+%% Compute path for dynamic library
+if ismember(callType,{'dynamicLibrary'})
+    if ~isempty(fileparts(dynamicLibrary))
+        error('dynamicLibrary (''%s'') should not include a path. Use ''folder'' instead.\n',dynamicLibrary);
+    end
+    % Retrieve dynamic library's absolute path
+    try
+        old=cd(folder);
+    catch me
+        error('folder ''%s'' to save dynamicLibrary does not exist\n',folder);
+    end
+    dynamicLibraryWithPath=fsfullfile(pwd,dynamicLibrary);
+    cd(old);
+    % Select file name used for dlopen/LoadLibrary
+    if absolutePath
+        dynamicLibrary_dlopen=dynamicLibraryWithPath;
+    else
+        dynamicLibrary_dlopen=dynamicLibrary;
+        fprintf('No path included for the library, relying on the OS-specific method used to find ''%s''.',dynamicLibrary);
+    end
+else
+    dynamicLibraryWithPath='';
+end
+
 switch lower(computer)
   case 'maci64'
     compilerOptimization=[compilerOptimization,' -msse -msse2 -msse3 -msse4 -msse4.1'];
@@ -529,19 +584,7 @@ end
 %% Create class definition header
 if isempty(className)
     fic=[];
-    classFolder='';
 else
-    %% transfer any folder in classname into folder
-    if ~isempty(fileparts(className))
-        error('className "%s" should not include a path\n',className);
-    else
-        [folder,className]=fileparts(fsfullfile(folder,className));
-    end
-    classFolder=fsfullfile(folder,sprintf('@%s',className));
-    if ~exist(classFolder,'dir')
-        mkdir(classFolder);
-        fprintf('createGateway: class folder @%s does not exist, creating it\n',className);
-    end
     name=fsfullfile(classFolder,sprintf('%s.m',className));
     fic=fopen(name,'w');
     if fic<=0
@@ -602,7 +645,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Add code to be executed to template structure
-template=computeCode(template,callType,dynamicLibrary,folder,...
+template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dlopen,folder,...
                      CfunctionsSource,targetComputer,compilerOptimization,...
                      serverComputer,serverProgramName,serverAddress,port,MAGIC,...
                      verboseLevel);
@@ -619,7 +662,7 @@ for i=1:length(template)
                  defines,template(i).includes,template(i).code,...
                  template(i).preprocess,preprocessParameters,...
                  template(i).callCfunction,template(i).method,...
-                 classFolder,fic,callType,dynamicLibrary,compilerOptimization,...
+                 classFolder,fic,callType,compilerOptimization,...
                  verboseLevel);
 end
 if verboseLevel>0
@@ -660,7 +703,7 @@ statistics=struct();
 %% Create dynamic library
 if ismember(callType,{'dynamicLibrary'}) && compileLibrary
     %% Create header for eventually loadlib
-    hfilename=fsfullfile(classFolder,sprintf('%s.h',dynamicLibrary));
+    hfilename=sprintf('%s.h',dynamicLibraryWithPath);
     fih=fopen(hfilename,'w');
     if fih<0
         error('createGateway: Unable to create header file ''%s''\n',hfilename);
@@ -668,9 +711,9 @@ if ismember(callType,{'dynamicLibrary'}) && compileLibrary
     fprintf(fih,'/* Created by script createGateway.m on %s */\n\n',datestr(now));
     includeFile(fih,'GPL.c');
     [cmd,script]=libraryCompile(compilerOptimization,...
-                                CfunctionsSource,fsfullfile(folder,dynamicLibrary),verboseLevel);
+                                CfunctionsSource,dynamicLibraryWithPath,verboseLevel);
     fprintf(fih,'/* %s */\n\n',cmd);
-    fprintf(fih,'#include "mex.h"\n');
+    fprintf(fih,'#include <mex.h>\n');
     fprintf(fih,'#include <stdint.h>\n');
 
     fprintf(fih,'#ifdef DYNAMIC_LIBRARY\n');
@@ -695,7 +738,7 @@ if ismember(callType,{'dynamicLibrary'}) && compileLibrary
     fclose(fih);
     %% Compile
     statistics=libraryCompile(compilerOptimization,...
-                              CfunctionsSource,fsfullfile(folder,dynamicLibrary),verboseLevel);
+                              CfunctionsSource,dynamicLibraryWithPath,verboseLevel);
 end
 
 %% Create compile class 
@@ -717,7 +760,7 @@ if ~isempty(className) && ~strcmp(callType,'client-server')
     
     % library
     [cmd,script]=libraryCompile(compilerOptimization,...
-                                CfunctionsSource,fsfullfile(folder,dynamicLibrary),verboseLevel);
+                                CfunctionsSource,dynamicLibraryWithPath,verboseLevel);
     for j=1:length(script)
         fprintf(fic,'       %s\n',script{j});
     end
@@ -889,7 +932,7 @@ end
 %% Add code to be executed to the template structure
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function template=computeCode(template,callType,dynamicLibrary,folder,...
+function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dlopen,folder,...
                               CfunctionsSource,targetComputer,compilerOptimization,...
                               serverComputer,serverProgramName,serverAddress,port,magic,...
                               verboseLevel)
@@ -908,7 +951,7 @@ function template=computeCode(template,callType,dynamicLibrary,folder,...
         fprintf(fmid,'#include <fcntl.h>\n');
         fprintf(fmid,'#include <unistd.h>\n');
         fprintf(fmid,'#include <stdio.h>\n');
-        fprintf(fmid,'#include "matrix.h"\n');
+        fprintf(fmid,'#include <matrix.h>\n');
         fprintf(fmid,'#define mexPrintf(...) fprintf (stderr, __VA_ARGS__)\n\n');
         ph=fileparts(which('createGateway'));
         %fprintf(fmid,'#include "%s"\n',fsfullfile(ph,'server.c'));
@@ -947,9 +990,9 @@ function template=computeCode(template,callType,dynamicLibrary,folder,...
           case 'dynamicLibrary'
             template(t).callCfunction=sprintf('   if (!P%s) {\n',template(t).Cfunction);
             template(t).callCfunction=[template(t).callCfunction,sprintf('#ifdef __linux__\n')];
-            % no folder in dlopen, otherwise linux ignores LD_LIBRARY_PATH
             template(t).callCfunction=[template(t).callCfunction,...
-                                sprintf('     libHandle = dlopen("%s.so", RTLD_NOW);\n',dynamicLibrary)];
+                                sprintf('     libHandle = dlopen("%s.so", RTLD_NOW);\n',...
+                                        dynamicLibrary_dlopen)];
             template(t).callCfunction=[template(t).callCfunction,...
                                 sprintf('     if (!libHandle) { printf("[%%s] Unable to open library: %%s\\n",__FILE__, dlerror());return; }\n')];
             template(t).callCfunction=[template(t).callCfunction,...
@@ -961,7 +1004,7 @@ function template=computeCode(template,callType,dynamicLibrary,folder,...
             template(t).callCfunction=[template(t).callCfunction,sprintf('#elif __APPLE__\n')];
             template(t).callCfunction=[template(t).callCfunction,...
                                 sprintf('     libHandle = dlopen("%s.dylib", RTLD_NOW);\n',...
-                                        fsfullfile(folder,dynamicLibrary))];
+                                        dynamicLibrary_dlopen)];
             template(t).callCfunction=[template(t).callCfunction,...
                                 sprintf('     if (!libHandle) { printf("[%%s] Unable to open library: %%s\\n",__FILE__, dlerror());return; }\n')];
             template(t).callCfunction=[template(t).callCfunction,...
@@ -973,7 +1016,7 @@ function template=computeCode(template,callType,dynamicLibrary,folder,...
             template(t).callCfunction=[template(t).callCfunction,sprintf('#elif _WIN32\n')];
             template(t).callCfunction=[template(t).callCfunction,...
                                 sprintf('     libHandle = LoadLibrary("%s.dll");\n',...
-                                        fsfullfile(folder,dynamicLibrary))];
+                                        dynamicLibrary_dlopen)];
             template(t).callCfunction=[template(t).callCfunction,...
                                 sprintf('     if (!libHandle) { printf("[%%s] Unable to open library\\n",__FILE__);return; }\n')];
             template(t).callCfunction=[template(t).callCfunction,...
@@ -1071,7 +1114,7 @@ function template=computeCode(template,callType,dynamicLibrary,folder,...
             fprintf(fmid,'#include <fcntl.h>\n');
             fprintf(fmid,'#include <unistd.h>\n');
             fprintf(fmid,'#include <stdio.h>\n');
-            fprintf(fmid,'#include "matrix.h"\n');
+            fprintf(fmid,'#include <matrix.h>\n');
             fprintf(fmid,'#define mexPrintf(...) fprintf (stderr, __VA_ARGS__)\n\n');
             
             % declare function that does work
@@ -1297,9 +1340,9 @@ function template=computeCode(template,callType,dynamicLibrary,folder,...
         template(end).callCfunction=sprintf('  if (!libHandle || load[0]) {\n');
 
         template(end).callCfunction=[template(end).callCfunction,sprintf('#ifdef __linux__\n')];
-            % no folder in dlopen, otherwise linux ignores LD_LIBRARY_PATH
         template(end).callCfunction=[template(end).callCfunction,...
-                            sprintf('     libHandle = dlopen("%s.so", RTLD_NOW);\n',dynamicLibrary)];
+                            sprintf('     libHandle = dlopen("%s.so", RTLD_NOW);\n',...
+                                    dynamicLibrary_dlopen)];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('     if (!libHandle) { printf("[%%s] Unable to open library: %%s\\n",__FILE__, dlerror());return; }\n')];
         for t=1:length(template)-1
@@ -1313,7 +1356,7 @@ function template=computeCode(template,callType,dynamicLibrary,folder,...
         template(end).callCfunction=[template(end).callCfunction,sprintf('#elif __APPLE__\n')];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('     libHandle = dlopen("%s.dylib", RTLD_NOW);\n',...
-                                    fsfullfile(folder,dynamicLibrary))];
+                                    dynamicLibrary_dlopen)];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('     if (!libHandle) { printf("[%%s] Unable to open library: %%s\\n",__FILE__, dlerror());return; }\n')];
         for t=1:length(template)-1
@@ -1327,7 +1370,7 @@ function template=computeCode(template,callType,dynamicLibrary,folder,...
         template(end).callCfunction=[template(end).callCfunction,sprintf('#elif _WIN32\n')];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('     libHandle = LoadLibrary("%s.dll");\n',...
-                                    fsfullfile(folder,dynamicLibrary))];
+                                    dynamicLibrary_dlopen)];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('     if (!libHandle) { printf("[%%s] Unable to open library\\n",__FILE__);return; }\n')];
         for t=1:length(template)-1
@@ -1362,8 +1405,8 @@ function writeGateway(cmexname,Cfunction,...
                       defines,includes,code,...
                       preprocess,preprocessParameters,...
                       callCfunction,method,...
-                      folder,fic,callType,dynamicLibrary,...
-                      compilerOptimization,verboseLevel)
+                      classFolder,fic,callType,compilerOptimization,...
+                      verboseLevel)
     
     debugCount=0;
 
@@ -1410,7 +1453,7 @@ function writeGateway(cmexname,Cfunction,...
     if verboseLevel>2
        fprintf('creating function %s.c (%s)\n',cmexname,Cfunction);
     end
-    cfilename=fsfullfile(folder,sprintf('%s.c',cmexname));
+    cfilename=fsfullfile(classFolder,sprintf('%s.c',cmexname));
     
     fid=fopen(cfilename,'w');
     if fid<0
@@ -1418,11 +1461,11 @@ function writeGateway(cmexname,Cfunction,...
     end
     fprintf(fid,'/* Created by script createGateway.m on %s */\n\n',datestr(now));
     includeFile(fid,'GPL.c');
-    [cmd,scripts]=gatewayCompile(compilerOptimization,folder,...
-                                 fsfullfile(folder,cmexname),verboseLevel);
+    [cmd,scripts]=gatewayCompile(compilerOptimization,classFolder,...
+                                 fsfullfile(classFolder,cmexname),verboseLevel);
     fprintf(fid,'/* %s */\n\n',cmd);
     
-    %fprintf(fid,'#include "math.h"\n');
+    %fprintf(fid,'#include <math.>"\n');
     if ismember(callType,{'dynamicLibrary'})
         fprintf(fid,'#ifdef __linux__\n#include <dlfcn.h>\n#include <unistd.h>\n#endif\n');
         fprintf(fid,'#ifdef __APPLE__\n#include <dlfcn.h>\n#include <unistd.h>\n#endif\n');
@@ -1433,7 +1476,7 @@ function writeGateway(cmexname,Cfunction,...
     %fprintf(fid,'#include <stdlib.h>\n');
     %fprintf(fid,'#include <pthread.h>\n');
     fprintf(fid,'#include <fcntl.h>\n');
-    fprintf(fid,'#include "mex.h"\n\n');
+    fprintf(fid,'#include <mex.h>\n\n');
 
     % defines
     if ~isempty(defines)
@@ -1486,7 +1529,7 @@ function writeGateway(cmexname,Cfunction,...
         fclose(fpre);
         rehash path;
         feval('tmp_toremove',preprocessParameters{:});
-        fid=fopen(fsfullfile(folder,sprintf('%s.c',cmexname)),'a'); % reopen file
+        fid=fopen(fsfullfile(classFolder,sprintf('%s.c',cmexname)),'a'); % reopen file
     end
     if verboseLevel>1
         fprintf('done preprocess() (%.2f sec) ',etime(clock,t1));
