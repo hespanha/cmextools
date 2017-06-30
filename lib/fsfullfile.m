@@ -18,6 +18,9 @@ function str=fsfullfile(varargin)
 %
 % You should have received a copy of the GNU General Public License
 % along with TensCalc.  If not, see <http://www.gnu.org/licenses/>.
+    for i=1:nargin
+        varargin{i}=regexprep(varargin{i},'\','/'); % replace "quotes for MS windows
+    end
     str=varargin{1};
     for i=2:nargin
         str=[str,'/',varargin{i}];
