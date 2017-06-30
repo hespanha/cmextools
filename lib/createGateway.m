@@ -476,6 +476,7 @@ if ismember(callType,{'dynamicLibrary'})
     end
 else
     dynamicLibraryWithPath='';
+    dynamicLibrary_dlopen='';
 end
 
 switch lower(computer)

@@ -140,6 +140,10 @@ To install
 	install_cmextools
 	```
 
+	This will only succeed after if you have already installed [FunParTools](../../../funpartools)
+    (steps 2 above).
+
+
 5. To test if all is well, go to `cmextools/examples` and execute
 
 	```matlab
