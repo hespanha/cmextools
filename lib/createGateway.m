@@ -447,6 +447,8 @@ else
     if ~isempty(fileparts(className))
         error('className "%s" should not include a path. Use ''folder'' instead.\n',className);
     end
+    clear(className); % make sure any previous version of the class
+                      % is cleared before overwriting it
     classFolder=fsfullfile(folder,sprintf('@%s',className));
     if ~exist(classFolder,'dir')
         mkdir(classFolder);
