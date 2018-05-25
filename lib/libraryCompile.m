@@ -63,7 +63,7 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
         % /O2 gives "fatal error C1002: compiler is out of heap space in pass 2"
         compilerOptimization=strrep(compilerOptimization,'-O0','/Od');
         compilerOptimization=strrep(compilerOptimization,'-Ofast','/Ot');
-        compilerOptimization=strrep(compilerOptimization,'-O1','/O2');
+        compilerOptimization=strrep(compilerOptimization,'-O1','/O1');
     end
     
     if ~isempty(findSuiteSparse())
