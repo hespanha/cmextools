@@ -59,9 +59,11 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
     libraries={'mx';'mex';'mat';'stdc++'};
     libraries_pcwin64={'mx';'mex';'mat'};
     
-    compilerOptimization=strrep(compilerOptimization,'-O0','/Od');
-    compilerOptimization=strrep(compilerOptimization,'-Ofast','/O2');
-    compilerOptimization=strrep(compilerOptimization,'-O1','/Ot');
+    if ispc
+        compilerOptimization=strrep(compilerOptimization,'-O0','/Od');
+        compilerOptimization=strrep(compilerOptimization,'-Ofast','/Ot');
+        compilerOptimization=strrep(compilerOptimization,'-O1','/O2');
+    end
     
     if ~isempty(findSuiteSparse())
         include_paths{end+1,1}=fsfullfile(findSuiteSparse(),'include');
