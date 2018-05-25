@@ -3,7 +3,11 @@ home=[fileparts(which('install_cmextools')),'/lib'];
 folders={home};
 
 s=path;
-old=regexp(s,'[^:]*cmextools.lib[^/:]*','match');
+if ispc
+    old=regexp(s,'[^;]*cmextools.lib[^/;]*','match');
+else
+    old=regexp(s,'[^:]*cmextools.lib[^/:]*','match');
+end
 if ~isempty(old)
     fprintf('removing from path:\n');
     disp(old')
