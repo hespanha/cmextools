@@ -31,4 +31,4 @@ E=tmp_MYplus(C,D)
 EE=C+D
 
 disp('Erasing generated files');
-delete('toremove.m','tmp*');rc=rmdir('@tmp*','s');
+delete('tmp*');rc=rmdir('@tmp*','s');

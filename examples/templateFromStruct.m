@@ -17,7 +17,6 @@
 % along with TensCalc.  If not, see <http://www.gnu.org/licenses/>.
 
 clear all
-!rm -fr tmp* @tmp*
 
 template(1).MEXfunction  = 'tmp_MYplus';
 template(1).Cfunction = 'plus';
@@ -74,5 +73,5 @@ E
 EE=C+D
 
 disp('Erasing generated files');
-delete('toremove.m','tmp*');rc=rmdir('@tmp*','s');
+delete('tmp*');rc=rmdir('@tmp*','s');
 

@@ -17,7 +17,6 @@
 % along with TensCalc.  If not, see <http://www.gnu.org/licenses/>.
 
 clear all
-delete tmp* @tmp*/* *.dylib *.mex*
 
 % Copyright 2012-2017 Joao Hespanha
 
@@ -100,5 +99,5 @@ EE=C+D
 clear obj;
 
 disp('Erasing generated files');
-delete('toremove.m','tmp*');rc=rmdir('@tmp*','s');
+%delete('tmp*');rc=rmdir('@tmp*','s');
 
