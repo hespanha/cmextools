@@ -30,7 +30,8 @@ end
 if ispc
     fprintf('Looking for compiler');
     cmp=mex.getCompilerConfigurations('C','Selected');
-    compiler=[cmp.Location,'\VC\Tools\MSVC\*\bin\HostX64\x64\cl.exe'];
+    cmd_shell=cmp.Details.CommandLineShell;
+    cmd_shellArg=cmp.Details.CommandLineShellArg;
 end
 
 fprintf('done!\n');
