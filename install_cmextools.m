@@ -1,4 +1,4 @@
-fprintf('Seeting up path...');
+fprintf('Seeting up path:\n');
 home=[fileparts(which('install_cmextools')),'/lib'];
 folders={home};
 
@@ -9,16 +9,16 @@ else
     old=regexp(s,'[^:]*cmextools.lib[^/:]*','match');
 end
 if ~isempty(old)
-    fprintf('removing from path:\n');
+    fprintf('  removing from path:\n');
     disp(old')
     rmpath(old{:})
 end
 
-fprintf('adding to path:\n');
+fprintf('  adding to path:\n');
 addpath(folders{:});
 disp(folders)
 
-fprintf('saving path...');
+fprintf('  saving path...');
 try
     savepath;
 catch me
@@ -26,12 +26,15 @@ catch me
     disp(folders)
     rethrow(me)
 end
+fprintf('done with path!\n\n');
 
 if ispc
-    fprintf('Looking for compiler');
-    cmp=mex.getCompilerConfigurations('C','Selected');
-    cmd_shell=cmp.Details.CommandLineShell;
-    cmd_shellArg=cmp.Details.CommandLineShellArg;
+    fprintf('Looking for compiler:\n');
+    if ispc
+        cmd='cl.exe';
+    else
+        cmd='gcc';
+    end
+    system_path(cmd);
 end
-
 fprintf('done!\n');

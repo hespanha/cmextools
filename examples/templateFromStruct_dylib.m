@@ -36,8 +36,6 @@ clear all
 % along with TensCalc.  If not, see <http://www.gnu.org/licenses/>.
 
 clear all
-!rm -fr tmp* @tmp*
-
 
 template(1).MEXfunction  = 'tmp_MEXplus';
 template(1).Cfunction = 'plus';
@@ -99,5 +97,5 @@ EE=C+D
 clear obj;
 
 disp('Erasing generated files');
-%delete('tmp*');rc=rmdir('@tmp*','s');
+delete('tmp*');rc=rmdir('@tmp*','s');
 

@@ -487,7 +487,7 @@ switch lower(computer)
   case 'glnxa64'
     compilerOptimization=[compilerOptimization,' -msse -msse2 -msse3 -msse4 -msse4.1'];
   case 'pcwin64'
-    compilerOptimization=[compilerOptimization,' /arch:sse2'];
+    compilerOptimization=[compilerOptimization,' /arch:AVX2'];
   otherwise
     error('unsupported computer ''%s''\n',computer);
 end

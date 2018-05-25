@@ -59,6 +59,10 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
     libraries={'mx';'mex';'mat';'stdc++'};
     libraries_pcwin64={'mx';'mex';'mat'};
     
+    compilerOptimization=strrep(compilerOptimization,'-O0','/Od');
+    compilerOptimization=strrep(compilerOptimization,'-Ofast','/O2');
+    compilerOptimization=strrep(compilerOptimization,'-O1','/Ot');
+    
     if ~isempty(findSuiteSparse())
         include_paths{end+1,1}=fsfullfile(findSuiteSparse(),'include');
         library_paths{end+1,1}=fsfullfile(findSuiteSparse(),'lib');
@@ -110,7 +114,7 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
    for i=1:length(cases)
         script{end+1}=sprintf('  case ''%s''',lower(cases{i}));
         script{end+1}=sprintf('    fprintf(''Compiling dynamic library %s.c (%%s)... '',compilerOptimization);t2=clock;',dynamicLibrary);
-        script{end+1}=sprintf('    system(sprintf(''%s'',compilerOptimization));',...
+        script{end+1}=sprintf('    system_path(sprintf(''%s'',compilerOptimization));',...
                               getfield(templates,cases{i}));
         script{end+1}=sprintf('    fprintf(''done (%%.2f)\\n'',etime(clock(),t2));');
         if strcmp(lower(computer),lower(cases{i}))
@@ -142,14 +146,14 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
     cfile=dir(sprintf('%s',CfunctionsSource));
     statistics.cFileSize=cfile.bytes;
     
-    if true %verboseLevel>1
-        fprintf('  Compiling dynamic library %s.c... ',dynamicLibrary);
+    if verboseLevel>1
+        fprintf('  Compiling dynamic library %s.c:\n',dynamicLibrary);
         fprintf('  %s\n',cmd);
     end
     
     fprintf(' optimization = %s... ',compilerOptimization);
     t2=clock;
-    rc=system(cmd);
+    rc=system_path(cmd);
     if rc
         error('Compilation error %d for dynamic library %s.c\n',rc,dynamicLibrary);
     end
