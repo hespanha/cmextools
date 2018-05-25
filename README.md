@@ -65,7 +65,7 @@ To install
 1. Make sure that you *Matlab*'s `mex` function properly configured.
 
 	* In OSX, `mex` should be configured to use *Xcode with Clang* for
-	  C language compilation.  To verify that this is so, type at the
+	  C language compilation. To verify that this is so, type at the
 	  *Matlab* prompt:
 	  
 	  ```matlab
@@ -84,6 +84,10 @@ To install
 	  >	         new API. You can find more information about this at:
 	  >	         http://www.mathworks.com/help/matlab/matlab_external/upgrading-mex-files-to-use-64-bit-api.html.
 
+	  For this to work you need to have Xcode installed, which you can download from https://developer.apple.com/xcode/
+	  
+	  Tested for *Matlab R2017a* and *Xcode 9.3.1*
+
 	* In linux, `mex` should be configured to use `gcc` for C language
 	  compilation.  To verify that this is so, type at the *Matlab*
 	  prompt:
@@ -91,19 +95,39 @@ To install
 	  ```matlab
 	  mex -setup C
 	  ```
-	
-	* In Microsoft Windows, `mex` should be configured for *Microsoft
-	  Visual C++ 2015 Professional (C)* for C language
-	  compilation.  To verify that this is so, type at the *Matlab*
-	  prompt:
+	  
+	* In Microsoft Windows 10, `mex` should be configured for
+	  *Microsoft Visual C++ 2017 (C)* for C language compilation.  To
+	  verify that this is so, type at the *Matlab* prompt:
 	
 	  ```matlab
 	  mex -setup C
 	  ```
-	  
-	  *Microsoft Visual C++ 2015 Professional (C)* is a free download from 
-	  https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads
 
+	  You should see something like
+
+	  > \>\> mex -setup C
+	  >
+	  > MEX configured to use 'Microsoft Visual C++ 2017 (C)' for C language compilation.
+	  > Warning: The MATLAB C and Fortran API has changed to support MATLAB
+	  > 	 variables with more than 2^32-1 elements. You will be required
+	  > 	 to update your code to utilize the new API.
+	  > 	 You can find more information about this at:
+	  > 	 https://www.mathworks.com/help/matlab/matlab_external/upgrading-mex-files-to-use-64-bit-api.html.
+
+      *Microsoft Visual Studio Community 2017* is a free IDE for
+      students, open-source and individual developers, which can be
+      downloaded from: https://www.visualstudio.com/vs/ 
+	  
+	  Within the *Microsoft Visual Studio Community 2017*, make sure
+      that you install the *Desktop development with C++*. Look under
+      the menu item *Tools/Get Tools and Features...* to confirm that
+      you did.
+
+	  Tested for *Matlab 2018a* and *Microsoft Visual Studio Community
+	  2017*.  See
+	  https://www.mathworks.com/matlabcentral/answers/335092-can-i-use-microsoft-visual-studio-2017-with-matlab
+	  if you are using an older version of *Matlab*
 
 2. Install [FunParTools](../../../funpartools) if you have not yet done so.
 
@@ -125,7 +149,8 @@ To install
 
 	The latter two options are recommended because you can
     subsequently use `svn update` or `git pull` to upgrade *CmexTools*
-    to the latest version.
+    to the latest version. Under Windows 10, we use the
+    following git client: https://git-scm.com/download/win
 
 	After this, you should have at least the following folders:
 

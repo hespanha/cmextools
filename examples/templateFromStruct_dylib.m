@@ -100,5 +100,5 @@ EE=C+D
 clear obj;
 
 disp('Erasing generated files');
-!rm -fr tmp* @tmp*
+delete('toremove.m','tmp*');rc=rmdir('@tmp*','s');
 
