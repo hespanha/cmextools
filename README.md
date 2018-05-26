@@ -95,7 +95,19 @@ To install
 	  ```matlab
 	  mex -setup C
 	  ```
-	  
+	  You should see something like
+
+	  > \>\> mex -setup C
+	  >
+	  > MEX configured to use 'gcc' for C language compilation.
+	  > Warning: The MATLAB C and Fortran API has changed to support MATLAB
+	  > 	 variables with more than 2^32-1 elements. You will be required
+	  > 	 to update your code to utilize the new API.
+	  > 	 You can find more information about this at:
+	  > 	 https://www.mathworks.com/help/matlab/matlab_external/upgrading-mex-files-to-use-64-bit-api.html.
+
+      *Matlab 2018a* requires gcc version 6.3, which you can install using the instructions at https://gist.github.com/application2000/73fd6f4bf1be6600a2cf9f56315a2d91
+	  	  
 	* In Microsoft Windows 10, `mex` should be configured for
 	  *Microsoft Visual C++ 2017 (C)* for C language compilation.  To
 	  verify that this is so, type at the *Matlab* prompt:
@@ -176,7 +188,7 @@ To install
 	templateFromStruct
 	templateFromStruct_dylib
 	```
-	
+
 ## Usage
 
 The *templates* used to specify the inputs an outputs to the
