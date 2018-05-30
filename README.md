@@ -108,6 +108,14 @@ To install
 
       *Matlab 2018a* requires gcc version 6.3, which you can install using the instructions at https://gist.github.com/application2000/73fd6f4bf1be6600a2cf9f56315a2d91
 	  	  
+	  In addition to gcc, you cmex also uses `clang` to generate
+      dynamics libraries which is much faster for large source
+      files. E.g., in ubuntu, you can install `clang` using
+	  
+	  ```sh
+	  sudo apt-get install clang
+	  ```
+		  
 	* In Microsoft Windows 10, `mex` should be configured for
 	  *Microsoft Visual C++ 2017 (C)* for C language compilation.  To
 	  verify that this is so, type at the *Matlab* prompt:
