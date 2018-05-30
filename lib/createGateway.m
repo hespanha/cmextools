@@ -348,7 +348,8 @@ declareParameter(...
     'DefaultValue',true,...
     'AdmissibleValues',{true,false},...
     'Description', {
-        'When ''true'' the dynamicLibrary is compiled using ''gcc''.'
+        'When ''true'' the dynamicLibrary is compiled, rather than simply'
+        'generating the source code.'
         'This parameter is used only when ''callType''=''dynamicLibrary''.'
        });
 
@@ -357,7 +358,8 @@ declareParameter(...
     'DefaultValue',true,...
     'AdmissibleValues',{true,false},...
     'Description', {
-        'When ''true'' the standalone/server executable is compiled using ''gcc''.'
+        'When ''true'' the standalone/server executable is compiled, rather than'
+        'simply generating the source code.'
         'This parameter is used only when ''callType'' has one of the values:';
         '   ''standalone'' or ''client-server'''
        });
