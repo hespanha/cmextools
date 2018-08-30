@@ -196,6 +196,9 @@ To install
 	templateFromStruct
 	templateFromStruct_dylib
 	```
+	
+	For this to work, MATLAB must have write permissions to the folder
+    `cmextools/examples`
 
 ## Usage
 
