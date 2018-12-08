@@ -115,7 +115,7 @@ To install
 	  ```sh
 	  sudo apt-get install clang
 	  ```
-		  
+	  
 	* In Microsoft Windows 10, `mex` should be configured for
 	  *Microsoft Visual C++ 2017 (C)* for C language compilation.  To
 	  verify that this is so, type at the *Matlab* prompt:
@@ -157,12 +157,12 @@ To install
 		https://github.com/hespanha/cmextools/archive/master.zip
 	   and unziping to an appropriate location
 
-	2. cloning this repository with Git, e.g., using the shell command
+	2. cloning this repository with svn, e.g., using the shell command
 	   ```sh
 	   svn checkout https://github.com/hespanha/cmextools.git
 	   ```
 	  
-	3. checking out this repository with svn, e.g., using the shell command
+	3. checking out this repository with Git, e.g., using the shell command
 	   ```sh
        git clone https://github.com/hespanha/cmextools.git
        ```
