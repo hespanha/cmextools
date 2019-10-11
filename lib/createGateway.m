@@ -1064,7 +1064,7 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
         fprintf(fmid,'         if (magic != %d) exit(1);\n',magic);
         fprintf(fmid,'         switch (method) {\n');
     end
-        
+
     for t=1:length(template)
         switch callType
             
@@ -1486,6 +1486,7 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
                                 sprintf('     if (!P%s) { printf("[%%s] Unable to get symbol\\n",__FILE__);return; }\n',...
                                         template(t).Cfunction)];
         end
+
         template(end).callCfunction=[template(end).callCfunction,sprintf('#endif // _WIN32\n')];
         template(end).callCfunction=[template(end).callCfunction,sprintf('  }\n')];
         template(end).callCfunction=[template(end).callCfunction,sprintf('  if (load[0]==0) {\n')];
@@ -1501,11 +1502,11 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
         template(end).callCfunction=[template(end).callCfunction,sprintf('#endif // _WIN32\n')];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('                  libHandle = NULL;\n')];
-        template(1:end-1).Cfunction
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('                  P%s = NULL;\n',template(1:end-1).Cfunction)];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('   }\n')];
+
         if verboseLevel>3
             template(end).callCfunction=[template(end).callCfunction,sprintf('  printf("libHandle=%%lx, load=%%lf\\n",libHandle,load[0]);\n')];
             for i=1:length(template)-1
@@ -1513,6 +1514,7 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
             end
         end
     end
+
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
