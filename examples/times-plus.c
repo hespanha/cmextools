@@ -19,7 +19,7 @@
 
 #ifdef createGateway
 
-MEXfunction tmp_MYplus
+MEXfunction tmp_Cplus
 
 inputs
 	double X1 [m,n]
@@ -31,7 +31,7 @@ outputs
 include   times-plus.c
 Cfunction plus
 
-MEXfunction tmp_MYtimes
+MEXfunction tmp_Ctimes
 
 inputs
 	double X1 [m,k]
@@ -47,8 +47,8 @@ Cfunction mtimes
 
 void plus(
    /* inputs */
-   double *X1,
-   double *X2,
+   const double *X1,
+   const double *X2,
    /* outputs */
    double *Y,
    /* sizes */
@@ -64,8 +64,8 @@ void plus(
 
 void mtimes(
    /* inputs */
-   double *X1,
-   double *X2,
+   const double *X1,
+   const double *X2,
    /* outputs */
    double *Y,
    /* sizes */

@@ -17,9 +17,11 @@
 % along with TensCalc.  If not, see <http://www.gnu.org/licenses/>.
 
 clear all
+delete('tmp*');rc=rmdir('@tmp*','s');
 
-template(1).MEXfunction  = 'tmp_MYplus';
+template(1).MEXfunction  = 'tmp_Cplus';
 template(1).Cfunction = 'plus';
+template(1).Sfunction = '';
 template(1).includes  = 'times-plus.c';
 template(1).inputs(1).type   = 'double';
 template(1).inputs(1).name   = 'X1';
@@ -31,8 +33,9 @@ template(1).outputs(1).type  = 'double';
 template(1).outputs(1).name  = 'Y';
 template(1).outputs(1).sizes = {'m','n'};
 
-template(2).MEXfunction  = 'tmp_MYtimes';
+template(2).MEXfunction  = 'tmp_Ctimes';
 template(2).Cfunction = 'mtimes';
+template(2).Sfunction = '';
 template(2).includes  = 'times-plus.c';
 template(2).inputs(1).type   = 'double';
 template(2).inputs(1).name   = 'X1';
@@ -54,19 +57,19 @@ A=rand(3,2);
 B=rand(2,4);
 C=rand(3,4);
 
-D=tmp_MYtimes(A,B);
-fprintf('tmp_MYtimes... ');
+D=tmp_Ctimes(A,B);
+fprintf('tmp_Ctimes... ');
 t0=clock;
-D=tmp_MYtimes(A,B);
+D=tmp_Ctimes(A,B);
 dt=etime(clock,t0);
 fprintf('done (%.0f us)\n',1e6*dt);
 D
 DD=A*B
 
-E=tmp_MYplus(C,D);
-fprintf('tmp_MYplus... ');
+E=tmp_Cplus(C,D);
+fprintf('tmp_Cplus... ');
 t0=clock;
-E=tmp_MYplus(C,D);
+E=tmp_Cplus(C,D);
 dt=etime(clock,t0);
 fprintf('done (%.0f us)\n',1e6*dt);
 E
