@@ -527,12 +527,16 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Read template from file, if needed
+
 if ischar(template)
     template=readTemplate(template,verboseLevel);
 end
 
 %% Complete missing template fields
 for t=1:length(template)
+    if ~isfield(template(t),'Sfunction')
+        template(t).Sfunction='';
+    end
     if ~isfield(template(t),'inputs') || isempty(template(t).inputs)
         template(t).inputs=struct('name',{});
     end
@@ -710,6 +714,7 @@ for i=1:length(template)
                  template(i).preprocess,preprocessParameters,...
                  template(i).callCfunction,template(i).method,...
                  classFolder,fic,callType,compilerOptimization,...
+                 dynamicLibrary,template(end),...
                  simulinkLibrary,dummySimulinkIOs,i,...
                  verboseLevel);
 end
@@ -719,7 +724,7 @@ end
 
 %% Compile gateways
 if compileGateways
-    fprintf('\n  Compiling %d MEX gateways... ',length(template));
+    fprintf('  Compiling %d MEX gateways... ',length(template));
     t1=clock;
     for i=1:length(template)
         gatewayCompile(compilerOptimization,folder,...
@@ -848,7 +853,7 @@ if ~isempty(simulinkLibrary)
     t1=clock;
     save_system(simulinkLibrary);    
     close_system(simulinkLibrary);
-    fprintf('done (%.2f sec)\n',length(template),etime(clock,t1));    
+    fprintf('done (%.2f sec)\n',etime(clock,t1));    
 end
 
 %% load library
@@ -1070,7 +1075,12 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
                                         template(t).outputs,template(t).sizes));
             
           case 'dynamicLibrary'
-            template(t).callCfunction=sprintf('   if (!P%s) {\n',template(t).Cfunction);
+            template(t).callCfunction='';
+            if verboseLevel>3
+                template(t).callCfunction=[template(t).callCfunction,sprintf('  printf("libHandle=%%lx\\n",libHandle);\n')];
+                template(t).callCfunction=[template(t).callCfunction,sprintf('  printf("   P%s=%%lx\\n",P%s);\n',template(t).Cfunction,template(t).Cfunction)];
+            end
+            template(t).callCfunction=[template(t).callCfunction,sprintf('   if (!P%s) {\n',template(t).Cfunction);];
             template(t).callCfunction=[template(t).callCfunction,sprintf('#ifdef __linux__\n')];
             template(t).callCfunction=[template(t).callCfunction,...
                                 sprintf('     libHandle = dlopen("%s.so", RTLD_NOW);\n',...
@@ -1109,6 +1119,11 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
                                         template(t).Cfunction)];
             template(t).callCfunction=[template(t).callCfunction,sprintf('#endif // _WIN32\n')];
             template(t).callCfunction=[template(t).callCfunction,sprintf('   }\n')];
+
+            if verboseLevel>3
+                template(t).callCfunction=[template(t).callCfunction,sprintf('  printf("libHandle=%%lx\\n",libHandle);\n')];
+                template(t).callCfunction=[template(t).callCfunction,sprintf('  printf("   P%s=%%lx\\n",P%s);\n',template(t).Cfunction,template(t).Cfunction)];
+            end
             
             template(t).callCfunction=[template(t).callCfunction,sprintf('   P%s(%s);\n',...
                                                               template(t).Cfunction,...
@@ -1420,7 +1435,14 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
         template(end).includes={};
         template(end).code=sprintf('void (*P%s)();\n',template(1:end-1).Cfunction);
         template(end).Cfunction='';
-        template(end).callCfunction=sprintf('  if (!libHandle || load[0]) {\n');
+        template(end).callCfunction='';
+        if verboseLevel>3
+            template(end).callCfunction=[template(end).callCfunction,sprintf('  printf("libHandle=%%lx, load=%%lf\\n",libHandle,load[0]);\n')];
+            for i=1:length(template)-1
+                template(end).callCfunction=[template(end).callCfunction,sprintf('  printf("   P%s=%%lx\\n",P%s);\n',template(i).Cfunction,template(i).Cfunction)];
+            end
+        end
+        template(end).callCfunction=[template(end).callCfunction,sprintf('  if (!libHandle || load[0]) {\n')];
 
         template(end).callCfunction=[template(end).callCfunction,sprintf('#ifdef __linux__\n')];
         template(end).callCfunction=[template(end).callCfunction,...
@@ -1466,16 +1488,30 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
         end
         template(end).callCfunction=[template(end).callCfunction,sprintf('#endif // _WIN32\n')];
         template(end).callCfunction=[template(end).callCfunction,sprintf('  }\n')];
+        template(end).callCfunction=[template(end).callCfunction,sprintf('  if (load[0]==0) {\n')];
         template(end).callCfunction=[template(end).callCfunction,sprintf('#ifdef __linux__\n')];
         template(end).callCfunction=[template(end).callCfunction,...
-                            sprintf('  if (load[0]==0) { while (!dlclose(libHandle)) printf(".");}\n')];
+                            sprintf('                  while (!dlclose(libHandle)) printf(".");\n')];
         template(end).callCfunction=[template(end).callCfunction,sprintf('#elif __APPLE__\n')];
         template(end).callCfunction=[template(end).callCfunction,...
-                            sprintf('  if (load[0]==0) { while (!dlclose(libHandle)) printf("."); }\n')];
+                            sprintf('                  while (!dlclose(libHandle)) printf("."); \n')];
         template(end).callCfunction=[template(end).callCfunction,sprintf('#elif _WIN32\n')];
         template(end).callCfunction=[template(end).callCfunction,...
-                            sprintf('  if (load[0]==0) { while (FreeLibrary(libHandle)) printf("."); }\n')];
+                            sprintf('                  while (FreeLibrary(libHandle)) printf("."); \n')];
         template(end).callCfunction=[template(end).callCfunction,sprintf('#endif // _WIN32\n')];
+        template(end).callCfunction=[template(end).callCfunction,...
+                            sprintf('                  libHandle = NULL;\n')];
+        template(1:end-1).Cfunction
+        template(end).callCfunction=[template(end).callCfunction,...
+                            sprintf('                  P%s = NULL;\n',template(1:end-1).Cfunction)];
+        template(end).callCfunction=[template(end).callCfunction,...
+                            sprintf('   }\n')];
+        if verboseLevel>3
+            template(end).callCfunction=[template(end).callCfunction,sprintf('  printf("libHandle=%%lx, load=%%lf\\n",libHandle,load[0]);\n')];
+            for i=1:length(template)-1
+                template(end).callCfunction=[template(end).callCfunction,sprintf('  printf("   P%s=%%lx\\n",P%s);\n',template(i).Cfunction,template(i).Cfunction)];
+            end
+        end
     end
 end
 
@@ -1489,6 +1525,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
                       preprocess,preprocessParameters,...
                       callCfunction,method,...
                       classFolder,fic,callType,compilerOptimization,...
+                      dynamicLibrary,templateLoad,...
                       simulinkLibrary,dummySimulinkIOs,blockNumber,...
                       verboseLevel)
     
@@ -1546,7 +1583,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
     if ~isempty(Sfunction)
         sFname=fsfullfile(classFolder,sprintf('%s.c',Sfunction));    
         if verboseLevel>2
-            fprintf('creating simulink S-function %s.c (%s)\n',sFname,Sfunction);        
+            fprintf('creating simulink S-function %s (%s)\n',sFname,Sfunction);        
         end
         sfid=fopen(sFname,'w');
         if sfid<0
@@ -1566,20 +1603,6 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
     [cmd,scripts]=gatewayCompile(compilerOptimization,classFolder,...
                                  fsfullfile(classFolder,cmexname),verboseLevel);
     fprintf(fid,'/* %s */\n\n',cmd);
-    
-    if ~isempty(sfid)
-        fprintf(sfid,'#define S_FUNCTION_NAME %s\n',Sfunction);
-        fprintf(sfid,'#define S_FUNCTION_LEVEL 2\n');
-        fprintf(sfid,'#include "simstruc.h"\n');
-        fprintf(sfid,'#define NUM_PARAMS (0)\n\n');
-        
-        fprintf(sfid,'static void mdlTerminate(SimStruct *S) { }\n\n');
-        
-        fprintf(sfid,'static void mdlInitializeSampleTimes(SimStruct *S) {\n');
-        fprintf(sfid,'   ssSetSampleTime(S, 0, INHERITED_SAMPLE_TIME);\n');
-        fprintf(sfid,'   ssSetOffsetTime(S, 0, 0.0);\n');
-        fprintf(sfid,'}\n\n');
-    end
     
     for f=fids
         %fprintf(f,'#include <math.>"\n');
@@ -1667,14 +1690,20 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         end
     end
     
-    %% Create mdlInitializeSizes for S-function
+    %% Create initializations for S-function
     
     if ~isempty(sfid)
+        fprintf(sfid,'#define S_FUNCTION_NAME %s\n',Sfunction);
+        fprintf(sfid,'#define S_FUNCTION_LEVEL 2\n');
+        fprintf(sfid,'#include "simstruc.h"\n');
+        fprintf(sfid,'#define NUM_PARAMS (0)\n\n');
+        
+        % mdlInitializeSizes
         fprintf(sfid,'static void mdlInitializeSizes(SimStruct *S) {\n');
         fprintf(sfid,'   ssSetNumSFcnParams(S, 0);\n');
 
         fprintf(sfid,'   if (ssGetNumSFcnParams(S) != ssGetSFcnParamsCount(S)) return;\n');
-
+ 
 
         fprintf(sfid,'\n   /* Process inputs */\n');
         fprintf(sfid,'   if (!ssSetNumInputPorts(S,%d)) return;\n',...
@@ -1720,8 +1749,30 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         end
 
         fprintf(sfid,'\n   ssSetNumSampleTimes(S, 1);\n\n');
-        fprintf(sfid,'   ssSetOptions(S, SS_OPTION_EXCEPTION_FREE_CODE);\n');
+        fprintf(sfid,'   ssSetOptions(S, SS_OPTION_EXCEPTION_FREE_CODE|SS_OPTION_CALL_TERMINATE_ON_EXIT);\n');
      
+        fprintf(sfid,'}\n\n');
+        
+        % mdlInitializeSampleTimes
+        fprintf(sfid,'static void mdlInitializeSampleTimes(SimStruct *S) {\n');
+        fprintf(sfid,'   ssSetSampleTime(S, 0, INHERITED_SAMPLE_TIME);\n');
+        fprintf(sfid,'   ssSetOffsetTime(S, 0, 0.0);\n');
+        fprintf(sfid,'}\n\n');
+
+        % mdlTerminate
+        fprintf(sfid,'static void mdlTerminate(SimStruct *S) {\n');
+        if ismember(callType,{'dynamicLibrary'})
+            %    fprintf(sfid,'   { int load[]={0};\n%s\n   }\n',templateLoad.callCfunction);
+            fprintf(sfid,'#ifdef __linux__\n');
+            fprintf(sfid,'                  while (!dlclose(libHandle)) printf(".");\n');
+            fprintf(sfid,'#elif __APPLE__\n');
+            fprintf(sfid,'                  while (!dlclose(libHandle)) printf("."); \n');
+            fprintf(sfid,'#elif _WIN32\n');
+            fprintf(sfid,'                  while (FreeLibrary(libHandle)) printf("."); \n');
+            fprintf(sfid,'#endif // _WIN32\n');
+            fprintf(sfid,'   libHandle=NULL;\n');
+            fprintf(sfid,'   P%s=NULL;\n',Cfunction);
+        end
         fprintf(sfid,'}\n\n');
         
     end

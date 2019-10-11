@@ -53,9 +53,11 @@ createGateway('template',template,...
               'callType','dynamicLibrary','dynamicLibrary','tmp_lib',...
               'CfunctionsSource','times-plus-fixed-dylib.c',...
               'verboseLevel',1);
-tmp_library;                  % open library;
+
+tmp_library;                  % open Simulink library
 templateFromStructSimulinkS;  % open simulink file
-              
+             
+
 A=rand(3,2);
 B=rand(2,4);
 C=rand(3,4);
@@ -65,7 +67,7 @@ fprintf('tmp_Ctimes... ');
 t0=clock;
 D=tmp_Ctimes(A,B);
 dt=etime(clock,t0);
-fprintf('done (%.0f us)\n',1e6*dt);
+fprintf('done tmp_Ctimes (%.0f us)\n',1e6*dt);
 D,
 DD=A*B,
 
@@ -74,13 +76,17 @@ fprintf('tmp_Cplus... ');
 t0=clock;
 E=tmp_Cplus(C,D);
 dt=etime(clock,t0);
-fprintf('done (%.0f us)\n',1e6*dt);
+fprintf('done tmp_Cplus (%.0f us)\n',1e6*dt);
 E,
 EE=C+D,
 
 % run simulink model
+fprintf('Running simulink...\n');
+t1=clock();
 sim('templateFromStructSimulinkS');
-fprintf('Simulink outputs');
+fprintf('done simulink (%.3f sec)\nSimulink outputs',etime(clock(),t1));
+fprintf('size(DDD)=[%s]\n',index2str(size(DDD)));
+fprintf('size(EEE)=[%s]\n',index2str(size(EEE)));
 DDD=DDD(:,:,end),
 EEE=EEE(:,:,end),
 
