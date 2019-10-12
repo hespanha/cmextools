@@ -678,20 +678,6 @@ else
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Create Simulink library
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if ~isempty(simulinkLibrary)
-    close_system(simulinkLibrary,0);
-    if exist(simulinkLibrary,'file')
-        delete(sprintf('%s.slx',simulinkLibrary));
-        rehash;
-        warning('Simulink model ''%s'' appears to already exist, erasing it\n',simulinkLibrary);
-    end
-    open_system(new_system(simulinkLibrary,'Library','ErrorIfShadowed'));    
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Create cmex gateway functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -715,7 +701,7 @@ for i=1:length(template)
                  template(i).callCfunction,template(i).method,...
                  classFolder,fic,callType,compilerOptimization,...
                  dynamicLibrary,template(end),...
-                 simulinkLibrary,dummySimulinkIOs,i,...
+                 dummySimulinkIOs,...
                  verboseLevel);
 end
 if verboseLevel>0
@@ -848,11 +834,81 @@ if ~isempty(className)
     fclose(fic);
 end
 
+%% Create Simulink library
 if ~isempty(simulinkLibrary)
-    fprintf('  Saving simulink library... ',length(template));
+    close_system(simulinkLibrary,0);
+    if exist(simulinkLibrary,'file')
+        delete(sprintf('%s.slx',simulinkLibrary));
+        rehash;
+        warning('Simulink model ''%s'' appears to already exist, erasing it\n',simulinkLibrary);
+    end
+    fprintf('  Creating simulink library... ',length(template));
     t1=clock;
+    new_system(simulinkLibrary,'Library','ErrorIfShadowed');
+
+    for t=1:length(template)
+        if ~isempty(template(t).Sfunction)
+            blockName=sprintf('%s/%s',simulinkLibrary,template(t).Sfunction);
+            add_block('built-in/S-function',blockName);
+            set_param(blockName,'name',template(t).Sfunction);         % name below block
+            set_param(blockName,'FunctionName',template(t).Sfunction); % block name
+            set_param(blockName,'Parameters','');
+            set_param(blockName,'SFunctionModules','');
+            [xx,yy]=ind2sub([1,50],t);
+            set_param(blockName,'position',[600*(xx-.9),150*(yy-.75),600*(xx-.25),150*(yy-.25)]);
+            
+            blockPorts=get_param(blockName,'PortHandles');
+            
+            % connect inputs to constant blocks of appropriate zeros
+            for i=1:length(template(t).inputs)
+                sz=str2double(template(t).inputs(i).sizes);
+                cName=sprintf('%s/c%d%d (%s)',simulinkLibrary,t,i,index2str(sz));
+                add_block('built-in/constant',cName);
+                set_param(cName,'value',sprintf('rand(%s)',index2str(sz)));  % constant value
+                                                                                %set_param(cName,'name',template(t).inputs(i).name);         % name below block
+                set_param(cName,'position',[600*(xx-.9)-100,150*(yy+.25*(i-1)-.75),600*(xx-.9)-50,150*(yy+.25*(i-1)-.75)+20]);
+                cPorts=get_param(cName,'PortHandles');
+                add_line(simulinkLibrary,cPorts.Outport(1),blockPorts.Inport(i));
+            end
+            
+            if dummySimulinkIOs
+                i=i+1;
+                cName=sprintf('%s/cdummy%d',simulinkLibrary,t);
+                add_block('built-in/constant',cName);
+                set_param(cName,'value',sprintf('rand(1)'));  % constant value
+%set_param(cName,'name',template(t).inputs(i).name);         % name below block
+                set_param(cName,'position',[600*(xx-.9)-100,150*(yy+.25*(i-1)-.75),600*(xx-.9)-50,150*(yy+.25*(i-1)-.75)+20]);
+                cPorts=get_param(cName,'PortHandles');
+                add_line(simulinkLibrary,cPorts.Outport(1),blockPorts.Inport(i));
+            end
+        
+            % connect outputs to constant blocks of appropriate zeros
+            for i=1:length(template(t).outputs)
+                sz=str2double(template(t).outputs(i).sizes);
+                cName=sprintf('%s/p%d%d (%s)',simulinkLibrary,t,i,index2str(sz));
+                add_block('simulink/Sinks/Out1',cName);
+                %set_param(cName,'value',sprintf('rand(%s)',index2str(sz)));  % constant value
+                                                                                %set_param(cName,'name',template(t).outputs(i).name);         % name below block
+                set_param(cName,'position',[600*(xx-.25)+100,150*(yy+.25*(i-1)-.75),600*(xx-.25)+150,150*(yy+.25*(i-1)-.75)+20]);
+                cPorts=get_param(cName,'PortHandles');
+                add_line(simulinkLibrary,blockPorts.Outport(i),cPorts.Inport(1));
+            end
+            
+            if dummySimulinkIOs
+                i=i+1;
+                cName=sprintf('%s/pdummy%d',simulinkLibrary,t);
+                add_block('simulink/Sinks/Out1',cName);
+                %set_param(cName,'value',sprintf('rand(1)'));  % constant value
+%set_param(cName,'name',template(t).outputs(i).name);         % name below block
+                set_param(cName,'position',[600*(xx-.25)+100,150*(yy+.25*(i-1)-.75),600*(xx-.25)+150,150*(yy+.25*(i-1)-.75)+20]);
+                cPorts=get_param(cName,'PortHandles');
+                add_line(simulinkLibrary,blockPorts.Outport(i),cPorts.Inport(1));
+            end
+
+        end
+    end
+
     save_system(simulinkLibrary);    
-    close_system(simulinkLibrary);
     fprintf('done (%.2f sec)\n',etime(clock,t1));    
 end
 
@@ -1497,7 +1553,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
                       callCfunction,method,...
                       classFolder,fic,callType,compilerOptimization,...
                       dynamicLibrary,templateLoad,...
-                      simulinkLibrary,dummySimulinkIOs,blockNumber,...
+                      dummySimulinkIOs,...
                       verboseLevel)
     
     debugCount=0;
@@ -1680,6 +1736,10 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         fprintf(sfid,'   if (!ssSetNumInputPorts(S,%d)) return;\n',...
                 length(inputs)+dummySimulinkIOs);
         for i=1:length(inputs)
+            % pad sizes to 1
+            while length(inputs(i).sizes)<1
+                inputs(i).sizes{end+1}='1';
+            end
             sz=str2double(inputs(i).sizes);
             if any(isnan(sz))
                 warning('Creation of Simulink S-function only supports fixed sizes, ''%s'' found for input %d\n',index2str(sz),i);                
@@ -1691,6 +1751,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             fprintf(sfid,'   di.dims = dims;\n');
             fprintf(sfid,'   di.width = %d;\n',prod(sz));
             fprintf(sfid,'   ssSetInputPortDimensionInfo(S,%d,&di); }\n',i-1);
+            fprintf(sfid,'   ssSetInputPortDataType(S,%d,%s);\n',i-1,matlab2sstype(inputs(i).type));
             fprintf(sfid,'   ssSetInputPortRequiredContiguous(S,%d,1);\n',i-1);
             fprintf(sfid,'   ssSetInputPortDirectFeedThrough(S,%d,1);\n',i-1);
         end
@@ -1703,6 +1764,10 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         fprintf(sfid,'   if (!ssSetNumOutputPorts(S,%d)) return;\n',...
                 length(outputs)+dummySimulinkIOs);
         for i=1:length(outputs)
+            % pad sizes to 1
+            while length(outputs(i).sizes)<1
+                outputs(i).sizes{end+1}='1';
+            end
             sz=str2double(outputs(i).sizes);
             if any(isnan(sz))
                 warning('Creation of Simulink S-function only supports fixed sizes, ''%s'' found for output %d\n',index2str(sz),i);                
@@ -1714,6 +1779,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             fprintf(sfid,'   di.dims = dims;\n');
             fprintf(sfid,'   di.width = %d;\n',prod(sz));
             fprintf(sfid,'   ssSetOutputPortDimensionInfo(S,%d,&di); }\n',i-1);
+            fprintf(sfid,'   ssSetOutputPortDataType(S,%d,%s);\n',i-1,matlab2sstype(outputs(i).type));
         end
         if dummySimulinkIOs
             fprintf(sfid,'   ssSetOutputPortWidth(S,%d,1);\n',length(outputs));
@@ -1756,18 +1822,18 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         fprintf(sfid,'   /* Process inputs */\n');
         for i=1:length(inputs)
             fprintf(sfid,'   const %s *%s = ssGetInputPortSignal(S,%d);\n',...
-                    inputs(i).type,inputs(i).name,i-1);
+                    matlab2Ctype(inputs(i).type),inputs(i).name,i-1);
         end
         if dummySimulinkIOs
             fprintf(sfid,'   const double *dummyIn = ssGetInputPortSignal(S,%d);\n',length(inputs));
         end
         fprintf(sfid,'   /* Process outputs */\n');
         for i=1:length(outputs)
-            fprintf(sfid,'   %s *%s = ssGetOutputPortRealSignal(S,%d);\n',...
-                    outputs(i).type,outputs(i).name,i-1);            
+            fprintf(sfid,'   %s *%s = ssGetOutputPortSignal(S,%d);\n',...
+                    matlab2Ctype(outputs(i).type),outputs(i).name,i-1);            
         end
         if dummySimulinkIOs
-            fprintf(sfid,'   double *dummyOut = ssGetOutputPortRealSignal(S,%d);\n',length(outputs));
+            fprintf(sfid,'   double *dummyOut = ssGetOutputPortSignal(S,%d);\n',length(outputs));
         end
     end
 
@@ -1883,7 +1949,9 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
 
     % close S-function
     if ~isempty(sfid)
-        fprintf(sfid,'   *dummyOut = *dummyIn;\n\n');        
+        if dummySimulinkIOs
+            fprintf(sfid,'   *dummyOut = *dummyIn;\n\n');        
+        end
         fprintf(sfid,'} // mdlOutputs()\n\n');
         
         fprintf(sfid,'#ifdef MATLAB_MEX_FILE    /* Is this file being compiled as a MEX-file? */\n');
@@ -1893,18 +1961,6 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         fprintf(sfid,'#endif\n');
         fclose(sfid);
     end
-
-    %% Simulink block
-    if ~isempty(simulinkLibrary) && ~isempty(Sfunction)
-        blockName=sprintf('%s/%s',simulinkLibrary,Sfunction);
-        add_block('built-in/S-function',blockName);
-        set_param(blockName,'name',Sfunction);         % name below block
-        set_param(blockName,'FunctionName',Sfunction); % block name
-        set_param(blockName,'Parameters','');
-        set_param(blockName,'SFunctionModules','');
-        set_param(blockName,'position',200*[blockNumber-.75,.25,blockNumber-.25,.5]);
-    end
-    
 
 end
 
@@ -2122,6 +2178,35 @@ function str=matlab2classid(str)
         str='mxDOUBLE_CLASS';
       case 'single'
         str='mxSINGLE_CLASS';
+      otherwise
+        error('createGateway: unknown type %s\n',str);
+    end
+end
+
+%% Convert a matlab type to an S-function data type ID
+function str=matlab2sstype(str)
+    
+    switch (str)
+      case 'uint8'
+        str='SS_UINT8';
+      case 'uint16'
+        str='SS_UINT16';
+      case 'uint32'
+        str='SS_UINT32';
+      case 'uint64'
+        str='SS_UINT64';
+      case 'int8'
+        str='SS_INT8';
+      case 'int16'
+        str='SS_INT16';
+      case 'int32'
+        str='SS_INT32';
+      case 'int64'
+        str='SS_INT64';
+      case 'double'
+        str='SS_DOUBLE';
+      case 'single'
+        str='SS_SINGLE';
       otherwise
         error('createGateway: unknown type %s\n',str);
     end
