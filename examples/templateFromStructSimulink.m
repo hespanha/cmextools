@@ -85,5 +85,5 @@ DDD=DDD(:,:,end),
 EEE=EEE(:,:,end),
 
 disp('Erasing generated files');
-%delete('tmp*');rc=rmdir('@tmp*','s');
+delete('tmp*');rc=rmdir('@tmp*','s');
 
