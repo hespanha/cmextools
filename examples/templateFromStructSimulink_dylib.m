@@ -22,7 +22,7 @@ delete('tmp*');rc=rmdir('@tmp*','s');
 template(1).MEXfunction  = 'tmp_Cplus';
 template(1).Sfunction  = 'tmp_Splus';
 template(1).Cfunction = 'plus';
-template(1).includes  = 'times-plus-fixed.c';
+template(1).includes  = '../times-plus-fixed.c';
 template(1).inputs(1).type   = 'double';
 template(1).inputs(1).name   = 'X1';
 template(1).inputs(1).sizes  = {'3','4'};
@@ -36,7 +36,7 @@ template(1).outputs(1).sizes = {'3','4'};
 template(2).MEXfunction  = 'tmp_Ctimes';
 template(2).Sfunction  = 'tmp_Stimes';
 template(2).Cfunction = 'mtimes';
-template(2).includes  = 'times-plus-fixed.c';
+template(2).includes  = '../times-plus-fixed.c';
 template(2).inputs(1).type   = 'double';
 template(2).inputs(1).name   = 'X1';
 template(2).inputs(1).sizes  = {'3','2'};
@@ -47,12 +47,14 @@ template(2).outputs(1).type  = 'double';
 template(2).outputs(1).name  = 'Y';
 template(2).outputs(1).sizes = {'3','4'};
 
+classname='tmp_timesplus';
 createGateway('template',template,...
               'simulinkLibrary','tmp_library','dummySimulinkIOs',true,...
               'verboseLevel',1,...
-              'callType','dynamicLibrary','dynamicLibrary','tmp_lib',...
+              'callType','dynamicLibrary','dynamicLibrary','tmp_timesplus',...
               'CfunctionsSource','times-plus-fixed-dylib.c',...
-              'verboseLevel',1);
+              'className',classname,...
+              'verboseLevel',4);
 
 tmp_library;                  % open Simulink library
 templateFromStructSimulinkS;  % open simulink file

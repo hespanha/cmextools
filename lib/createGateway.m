@@ -1077,8 +1077,8 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
           case 'dynamicLibrary'
             template(t).callCfunction='';
             if verboseLevel>3
-                template(t).callCfunction=[template(t).callCfunction,sprintf('  printf("libHandle=%%lx\\n",libHandle);\n')];
-                template(t).callCfunction=[template(t).callCfunction,sprintf('  printf("   P%s=%%lx\\n",P%s);\n',template(t).Cfunction,template(t).Cfunction)];
+                template(t).callCfunction=[template(t).callCfunction,sprintf('   printf("call %s (before):\tP%s=%%lx\\n",P%s);\n',template(t).Cfunction,template(t).Cfunction,template(t).Cfunction)];
+                template(t).callCfunction=[template(t).callCfunction,sprintf('   printf("\t\t\tlibHandle=%%lx\\n",libHandle);\n')];
             end
             template(t).callCfunction=[template(t).callCfunction,sprintf('   if (!P%s) {\n',template(t).Cfunction);];
             template(t).callCfunction=[template(t).callCfunction,sprintf('#ifdef __linux__\n')];
@@ -1118,11 +1118,12 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
                                 sprintf('     if (!P%s) { printf("[%%s] Unable to get symbol\\n",__FILE__);return; }\n',...
                                         template(t).Cfunction)];
             template(t).callCfunction=[template(t).callCfunction,sprintf('#endif // _WIN32\n')];
+
             template(t).callCfunction=[template(t).callCfunction,sprintf('   }\n')];
 
             if verboseLevel>3
-                template(t).callCfunction=[template(t).callCfunction,sprintf('  printf("libHandle=%%lx\\n",libHandle);\n')];
-                template(t).callCfunction=[template(t).callCfunction,sprintf('  printf("   P%s=%%lx\\n",P%s);\n',template(t).Cfunction,template(t).Cfunction)];
+                template(t).callCfunction=[template(t).callCfunction,sprintf('   printf("call %s (after):\tP%s=%%lx\\n",P%s);\n',template(t).Cfunction,template(t).Cfunction,template(t).Cfunction)];
+                template(t).callCfunction=[template(t).callCfunction,sprintf('   printf("\t\t\tlibHandle=%%lx\\n",libHandle);\n')];
             end
             
             template(t).callCfunction=[template(t).callCfunction,sprintf('   P%s(%s);\n',...
@@ -1433,15 +1434,13 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
         template(end).inputs(1).sizes={'1','1'};
         template(end).preprocessParameters='';
         template(end).includes={};
-        template(end).code=sprintf('void (*P%s)();\n',template(1:end-1).Cfunction);
         template(end).Cfunction='';
         template(end).callCfunction='';
+        
         if verboseLevel>3
-            template(end).callCfunction=[template(end).callCfunction,sprintf('  printf("libHandle=%%lx, load=%%lf\\n",libHandle,load[0]);\n')];
-            for i=1:length(template)-1
-                template(end).callCfunction=[template(end).callCfunction,sprintf('  printf("   P%s=%%lx\\n",P%s);\n',template(i).Cfunction,template(i).Cfunction)];
-            end
+            template(end).callCfunction=[template(end).callCfunction,sprintf('  printf("%s_load (before):\tlibHandle=%%lx, load=%%lf\\n",libHandle,load[0]);\n',dynamicLibrary)];
         end
+
         template(end).callCfunction=[template(end).callCfunction,sprintf('  if (!libHandle || load[0]) {\n')];
 
         template(end).callCfunction=[template(end).callCfunction,sprintf('#ifdef __linux__\n')];
@@ -1450,43 +1449,18 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
                                     dynamicLibrary_dlopen)];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('     if (!libHandle) { printf("[%%s] Unable to open library: %%s\\n",__FILE__, dlerror());return; }\n')];
-        for t=1:length(template)-1
-            template(end).callCfunction=[template(end).callCfunction,...
-                                sprintf('     P%s = dlsym(libHandle, "%s");\n',...
-                                        template(t).Cfunction,template(t).Cfunction)];
-            template(end).callCfunction=[template(end).callCfunction,...
-                                sprintf('     if (!P%s) { printf("[%%s] Unable to get symbol: %%s\\n",__FILE__, dlerror());return; }\n',...
-                                        template(t).Cfunction)];
-        end
         template(end).callCfunction=[template(end).callCfunction,sprintf('#elif __APPLE__\n')];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('     libHandle = dlopen("%s.dylib", RTLD_NOW);\n',...
                                     dynamicLibrary_dlopen)];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('     if (!libHandle) { printf("[%%s] Unable to open library: %%s\\n",__FILE__, dlerror());return; }\n')];
-        for t=1:length(template)-1
-            template(end).callCfunction=[template(end).callCfunction,...
-                                sprintf('     P%s = dlsym(libHandle, "%s");\n',...
-                                        template(t).Cfunction,template(t).Cfunction)];
-            template(end).callCfunction=[template(end).callCfunction,...
-                                sprintf('     if (!P%s) { printf("[%%s] Unable to get symbol: %%s\\n",__FILE__, dlerror());return; }\n',...
-                                        template(t).Cfunction)];
-        end
         template(end).callCfunction=[template(end).callCfunction,sprintf('#elif _WIN32\n')];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('     libHandle = LoadLibrary("%s.dll");\n',...
                                     dynamicLibrary_dlopen)];
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('     if (!libHandle) { printf("[%%s] Unable to open library\\n",__FILE__);return; }\n')];
-        for t=1:length(template)-1
-            template(end).callCfunction=[template(end).callCfunction,...
-                                sprintf('     P%s = GetProcAddress(libHandle, "%s");\n',...
-                                        template(t).Cfunction,template(t).Cfunction)];
-            template(end).callCfunction=[template(end).callCfunction,...
-                                sprintf('     if (!P%s) { printf("[%%s] Unable to get symbol\\n",__FILE__);return; }\n',...
-                                        template(t).Cfunction)];
-        end
-
         template(end).callCfunction=[template(end).callCfunction,sprintf('#endif // _WIN32\n')];
         template(end).callCfunction=[template(end).callCfunction,sprintf('  }\n')];
         template(end).callCfunction=[template(end).callCfunction,sprintf('  if (load[0]==0) {\n')];
@@ -1503,15 +1477,10 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
         template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('                  libHandle = NULL;\n')];
         template(end).callCfunction=[template(end).callCfunction,...
-                            sprintf('                  P%s = NULL;\n',template(1:end-1).Cfunction)];
-        template(end).callCfunction=[template(end).callCfunction,...
                             sprintf('   }\n')];
 
         if verboseLevel>3
-            template(end).callCfunction=[template(end).callCfunction,sprintf('  printf("libHandle=%%lx, load=%%lf\\n",libHandle,load[0]);\n')];
-            for i=1:length(template)-1
-                template(end).callCfunction=[template(end).callCfunction,sprintf('  printf("   P%s=%%lx\\n",P%s);\n',template(i).Cfunction,template(i).Cfunction)];
-            end
+            template(end).callCfunction=[template(end).callCfunction,sprintf('   printf("%s_load (after):\tlibHandle=%%lx, load=%%lf\\n",libHandle,load[0]);\n',dynamicLibrary)];
         end
     end
 
@@ -1768,9 +1737,9 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             fprintf(sfid,'#ifdef __linux__\n');
             fprintf(sfid,'                  while (!dlclose(libHandle)) printf(".");\n');
             fprintf(sfid,'#elif __APPLE__\n');
-            fprintf(sfid,'                  while (!dlclose(libHandle)) printf("."); \n');
+            fprintf(sfid,'                  while (!dlclose(libHandle)) printf(".");\n');
             fprintf(sfid,'#elif _WIN32\n');
-            fprintf(sfid,'                  while (FreeLibrary(libHandle)) printf("."); \n');
+            fprintf(sfid,'                  while (!FreeLibrary(libHandle)) printf("."); \n');
             fprintf(sfid,'#endif // _WIN32\n');
             fprintf(sfid,'   libHandle=NULL;\n');
             fprintf(sfid,'   P%s=NULL;\n',Cfunction);
