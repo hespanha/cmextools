@@ -872,7 +872,7 @@ if ~isempty(simulinkLibrary)
             end
             
             if dummySimulinkIOs
-                i=i+1;
+                i=length(template(t).inputs)+1;
                 cName=sprintf('%s/cdummy%d',simulinkLibrary,t);
                 add_block('built-in/constant',cName);
                 set_param(cName,'value',sprintf('rand(1)'));  % constant value
@@ -881,7 +881,7 @@ if ~isempty(simulinkLibrary)
                 cPorts=get_param(cName,'PortHandles');
                 add_line(simulinkLibrary,cPorts.Outport(1),blockPorts.Inport(i));
             end
-        
+
             % connect outputs to constant blocks of appropriate zeros
             for i=1:length(template(t).outputs)
                 sz=str2double(template(t).outputs(i).sizes);
@@ -893,9 +893,9 @@ if ~isempty(simulinkLibrary)
                 cPorts=get_param(cName,'PortHandles');
                 add_line(simulinkLibrary,blockPorts.Outport(i),cPorts.Inport(1));
             end
-            
+
             if dummySimulinkIOs
-                i=i+1;
+                i=length(template(t).outputs)+1;
                 cName=sprintf('%s/pdummy%d',simulinkLibrary,t);
                 add_block('simulink/Sinks/Out1',cName);
                 %set_param(cName,'value',sprintf('rand(1)'));  % constant value
