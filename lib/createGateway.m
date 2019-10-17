@@ -1,7 +1,7 @@
 function varargout=createGateway(varargin)
 % To get help, type createGateway('help')
 %
-% Copyright 2012-2017 Joao Hespanha
+% Copyright 2012-2019 Joao Hespanha
 
 % This file is part of Tencalc.
 %
@@ -439,7 +439,7 @@ declareParameter(...
 declareOutput(...
     'VariableName','statistics',...
     'Description', {
-        'Structure with various statistics, include the file sizes and compilations times'
+        'Structure with various statistics, including the file sizes and compilations times'
         });
                     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -628,6 +628,10 @@ else
         error('unable to create file ''%s''\n',name);
     end
     fprintf(fic,'classdef %s < handle\n',className);
+    
+    if isempty(classHelp)
+        classHelp=helpFromTemplate(className,template);
+    end
     if ischar(classHelp)
         classHelp{1}=classHelp;
     end

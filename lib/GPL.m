@@ -1,4 +1,4 @@
-% Copyright 2012-2017 Joao Hespanha
+% Copyright 2012-2019 Joao Hespanha
 
 % This file is part of Tencalc.
 %
