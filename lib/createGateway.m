@@ -183,11 +183,13 @@ declareParameter(...
         '            ''inputs'',struct(...   '
         '                ''type'',{},...    % string'
         '                ''name'',{},...    % cell-array of strings (one per dimension)'
-        '                ''sizes'',{}),...  % cell-array of strings/or numeric array (one per dimension)'
+        '                ''sizes'',{}),...  % cell-array of strings/or numeric array (one per dimension) with original sizes'
+        '                ''msizes'',{}),... % cell-array of strings/or numeric array (one per dimension) with matlab-compatible sizes'
         '            ''outputs'',struct(...  % string'
         '                ''type'',{},...    % string'
         '                ''name'',{},...    % cell-array of strings (one per dimension)'
-        '                ''sizes'',{}),...  % cell-array of strings/or numeric array (one per dimension)'
+        '                ''sizes'',{}),...  % cell-array of strings/or numeric array (one per dimension) with original sizes'
+        '                ''msizes'',{}),... % cell-array of strings/or numeric array (one per dimension) with matlab-compatible sizes'
         '            ''preprocess'',{}..    % strings (starting with parameters in parenthesis)'
         '            ''includes'',{}..      % cell-array of strings (one per file)'
         '            );'
@@ -557,6 +559,16 @@ for t=1:length(template)
                                                  matlab2Ctype(template(t).inputs(i).type),...
                                                  le(1:end-1));
         end
+        % compute corresponding matlab-compatible sizes
+        template(t).inputs(i).msizes=template(t).inputs(i).sizes;
+        % pad with 1's till 2 dimensions
+        while length(template(t).inputs(i).msizes)<2
+            template(t).inputs(i).msizes{end+1}='1';
+        end
+        % squeeze out trailing singleton dimensions
+        while length(template(t).inputs(i).msizes)>2 && template(t).inputs(i).msizes{end}=='1' 
+            template(t).inputs(i).msizes(end)=[];
+        end
     end
     if ~isfield(template(t),'outputs') || isempty(template(t).outputs)
         template(t).outputs=struct('name',{});
@@ -577,6 +589,16 @@ for t=1:length(template)
             template(t).outputs(i).length=sprintf('sizeof(%s)*(%s)',...
                                                   matlab2Ctype(template(t).outputs(i).type),...
                                                   le(1:end-1));
+        end
+        % compute corresponding matlab-compatible sizes
+        template(t).outputs(i).msizes=template(t).outputs(i).sizes;
+        % pad with 1's till 2 dimensions
+        while length(template(t).outputs(i).msizes)<2
+            template(t).outputs(i).msizes{end+1}='1';
+        end
+        % squeeze out trailing singleton dimensions
+        while length(template(t).outputs(i).msizes)>2 && template(t).outputs(i).msizes{end}=='1' 
+            template(t).outputs(i).msizes(end)=[];
         end
     end
     if ~isfield(template(t),'method') || isempty(template(t).method)
@@ -1492,6 +1514,7 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
         template(end).inputs(1).name='load';
         template(end).inputs(1).type='double';
         template(end).inputs(1).sizes={'1','1'};
+        template(end).inputs(1).msizes={'1','1'};
         template(end).preprocessParameters='';
         template(end).includes={};
         template(end).Cfunction='';
@@ -1867,28 +1890,24 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
            fprintf('   input %s, type %s\n',inputs(i).name,inputs(i).type);
         end 
         fprintf(fid,'   /* input %s */\n',inputs(i).name);
-        % pad sizes to 2
-        while length(inputs(i).sizes)<2
-            inputs(i).sizes{end+1}='1';
-        end
         fprintf(fid,'   if (mxGetNumberOfDimensions(prhs[%d])!=%d)\n',...
-                i-1,length(inputs(i).sizes));
+                i-1,length(inputs(i).msizes));
         fprintf(fid,'       mexErrMsgIdAndTxt("%s:prhs","input %d (%s) should have %d dimensions, %%d found.",mxGetNumberOfDimensions(prhs[%d]));\n',...
-                        cmexname,i,inputs(i).name,length(inputs(i).sizes),i-1);
+                        cmexname,i,inputs(i).name,length(inputs(i).msizes),i-1);
         fprintf(fid,'   { const mwSize *dims=mxGetDimensions(prhs[%d]);\n',i-1);
-        for j=1:length(inputs(i).sizes)
-            k=find(strcmp(inputs(i).sizes{j},toAssign));
+        for j=1:length(inputs(i).msizes)
+            k=find(strcmp(inputs(i).msizes{j},toAssign));
             toAssign(k)=[];
-            if  ~strcmp(inputs(i).sizes{j},'~')
+            if  ~strcmp(inputs(i).msizes{j},'~')
                 if isempty(k)
                     % already assigned size, test if compatible
-                    fprintf(fid,'   if (dims[%d]!=%s)\n',j-1,inputs(i).sizes{j});
+                    fprintf(fid,'   if (dims[%d]!=%s)\n',j-1,inputs(i).msizes{j});
                     fprintf(fid,'       mexErrMsgIdAndTxt("%s:prhs","input %d (%s) should have %%d (=%s) in dimension %d, %%d found.",%s,dims[%d]);\n',...
                             cmexname,i,inputs(i).name,...
-                            inputs(i).sizes{j},j,inputs(i).sizes{j},j-1);
+                            inputs(i).msizes{j},j,inputs(i).msizes{j},j-1);
                 else
                     % assign size
-                    fprintf(fid,'   %s=dims[%d];\n',inputs(i).sizes{j},j-1);
+                    fprintf(fid,'   %s=dims[%d];\n',inputs(i).msizes{j},j-1);
                 end
             end
         end
@@ -1925,17 +1944,14 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         
         fprintf(fid,'   /* output %s */\n',outputs(i).name);
         if length(outputs(i).sizes)~=1 || ~strcmp(outputs(i).sizes{1},'~')
-            % padd sizes to 2
-            while length(outputs(i).sizes)<2
-                outputs(i).sizes{end+1}='1';
-            end
             fprintf(fid,'   { mwSize dims[]={');
-            fprintf(fid,'%s,',outputs(i).sizes{1:end-1});
-            fprintf(fid,'%s};\n',outputs(i).sizes{end});
+            fprintf(fid,'%s,',outputs(i).msizes{1:end-1});
+            fprintf(fid,'%s};\n',outputs(i).msizes{end});
             fprintf(fid,'     plhs[%d] = mxCreateNumericArray(%d,dims,%s,mxREAL);\n',...
-                    i-1,length(outputs(i).sizes),matlab2classid(outputs(i).type));
+                    i-1,length(outputs(i).msizes),matlab2classid(outputs(i).type));
             fprintf(fid,'     %s=mxGetData(plhs[%d]); }\n',outputs(i).name,i-1);
         else
+            % size == '~'
             fprintf(fid,'   %s=plhs+%d;\n',outputs(i).name,i-1);
         end
     end
