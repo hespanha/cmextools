@@ -1941,15 +1941,19 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         if 0
             fprintf('   output %s, type %s\n',outputs(i).name,outputs(i).type);
         end
-        
         fprintf(fid,'   /* output %s */\n',outputs(i).name);
         if length(outputs(i).sizes)~=1 || ~strcmp(outputs(i).sizes{1},'~')
-            fprintf(fid,'   { mwSize dims[]={');
-            fprintf(fid,'%s,',outputs(i).msizes{1:end-1});
-            fprintf(fid,'%s};\n',outputs(i).msizes{end});
-            fprintf(fid,'     plhs[%d] = mxCreateNumericArray(%d,dims,%s,mxREAL);\n',...
-                    i-1,length(outputs(i).msizes),matlab2classid(outputs(i).type));
-            fprintf(fid,'     %s=mxGetData(plhs[%d]); }\n',outputs(i).name,i-1);
+            if strcmp(outputs(i).type,'sparse')
+                fprintf(fid,'     %s=plhs[%d] = mxCreateSparse(%s,%s,0,mxREAL);\n',...
+                        outputs(i).name,i-1,outputs(i).msizes{1},outputs(i).msizes{2});
+            else
+                fprintf(fid,'   { mwSize dims[]={');
+                fprintf(fid,'%s,',outputs(i).msizes{1:end-1});
+                fprintf(fid,'%s};\n',outputs(i).msizes{end});
+                fprintf(fid,'     plhs[%d] = mxCreateNumericArray(%d,dims,%s,mxREAL);\n',...
+                        i-1,length(outputs(i).msizes),matlab2classid(outputs(i).type));
+                fprintf(fid,'     %s=mxGetData(plhs[%d]); }\n',outputs(i).name,i-1);
+            end
         else
             % size == '~'
             fprintf(fid,'   %s=plhs+%d;\n',outputs(i).name,i-1);
@@ -2139,6 +2143,8 @@ function str=matlab2Ctype(str)
     switch (str)
       case {'uint8','uint16','uint32','uint64','int8','int16','int32','int64'}
         str=sprintf('%s_t',str);
+      case {'sparse'}
+        str='mxArray';
       case {'double','single'}
       otherwise
         error('createGateway: unknown type %s\n',str);
