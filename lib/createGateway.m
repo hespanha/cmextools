@@ -472,9 +472,10 @@ if ismember(callType,{'dynamicLibrary','client-server'}) && isempty(CfunctionsSo
           callType);
 end
 
-%% Compute class folder
+%% Compute class folder & CMEX folder
 if isempty(className)
     classFolder='';
+    cmexFolder=folder;
 else
     if ~isempty(fileparts(className))
         error('className "%s" should not include a path. Use ''folder'' instead.\n',className);
@@ -484,7 +485,12 @@ else
     classFolder=fsfullfile(folder,sprintf('@%s',className));
     if ~exist(classFolder,'dir')
         mkdir(classFolder);
-        fprintf('createGateway: class folder @%s does not exist, creating it\n',className);
+        fprintf('createGateway: class folder ''%s'' does not exist, creating it\n',classFolder);
+    end
+    cmexFolder=fsfullfile(classFolder,'private');
+    if ~exist(cmexFolder,'dir')
+        mkdir(cmexFolder);
+        fprintf('createGateway: private class folder ''%s'' does not exist, creating it\n',cmexFolder);
     end
 end
 
@@ -495,9 +501,9 @@ if ismember(callType,{'dynamicLibrary'})
     end
     % Retrieve dynamic library's absolute path
     try
-        old=cd(folder);
+        old=cd(cmexFolder);
     catch me
-        error('folder ''%s'' to save dynamicLibrary does not exist\n',folder);
+        error('folder ''%s'' to save dynamicLibrary does not exist\n',cmexFolder);
     end
     dynamicLibraryWithPath=fsfullfile(pwd,dynamicLibrary);
     cd(old);
@@ -695,7 +701,7 @@ else
                 serverProgramName,serverAddress);
         % compile in remote server
         cmd=standaloneCompile(serverComputer,compilerOptimization,...
-                              fsfullfile(folder,serverProgramName),verboseLevel);
+                              fsfullfile(cmexFolder,serverProgramName),verboseLevel);
         fprintf(fic,'       system(''ssh %s %s'');\n',serverAddress,cmd);
         % start remote server
         fprintf(fic,'       system(''ssh %s %s & && echo waiting for remote server to start && sleep 5'');\n',serverAddress,serverProgramName);
@@ -708,7 +714,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Add code to be executed to template structure
-template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dlopen,folder,...
+template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dlopen,cmexFolder,...
                      CfunctionsSource,targetComputer,compilerOptimization,...
                      serverComputer,serverProgramName,serverAddress,port,MAGIC,...
                      verboseLevel);
@@ -725,7 +731,7 @@ for i=1:length(template)
                  defines,template(i).includes,template(i).code,...
                  template(i).preprocess,preprocessParameters,...
                  template(i).callCfunction,template(i).method,...
-                 classFolder,fic,callType,compilerOptimization,...
+                 cmexFolder,fic,callType,compilerOptimization,...
                  dynamicLibrary,template(end),...
                  dummySimulinkIOs,...
                  verboseLevel);
@@ -739,8 +745,8 @@ if compileGateways
     fprintf('  Compiling %d MEX gateways... ',length(template));
     t1=clock;
     for i=1:length(template)
-        gatewayCompile(compilerOptimization,folder,...
-                       fsfullfile(classFolder,template(i).MEXfunction),verboseLevel);
+        gatewayCompile(compilerOptimization,cmexFolder,...
+                       fsfullfile(cmexFolder,template(i).MEXfunction),verboseLevel);
     end
     fprintf('done compiling %d MEX gateways (%.2f sec)\n',length(template),etime(clock,t1));
 
@@ -749,8 +755,8 @@ if compileGateways
     t1=clock;
     for i=1:length(template)
         if ~isempty(template(i).Sfunction)
-            gatewayCompile(compilerOptimization,folder,...
-                           fsfullfile(classFolder,template(i).Sfunction),verboseLevel);
+            gatewayCompile(compilerOptimization,cmexFolder,...
+                           fsfullfile(cmexFolder,template(i).Sfunction),verboseLevel);
         end
     end
     fprintf('done compiling %d S-function gateways (%.2f sec)\n',length(template),etime(clock,t1));
@@ -765,14 +771,14 @@ if compileStandalones
         for i=1:length(template)
             standaloneCompile(targetComputer,compilerOptimization,...
                               sprintf('%s_salone',...
-                                      fsfullfile(classFolder,template(i).MEXfunction)),...
+                                      fsfullfile(cmexFolder,template(i).MEXfunction)),...
                               verboseLevel);
         end
         fprintf('done compiling %d standalones (%.2f sec)\n',...
                 length(template),etime(clock,t1));
     elseif strcmp(callType,'client-server') 
         standaloneCompile(serverComputer,compilerOptimization,...
-                          fsfullfile(folder,serverProgramName),verboseLevel);
+                          fsfullfile(cmexFolder,serverProgramName),verboseLevel);
     end
 end    
 
@@ -843,8 +849,8 @@ if ~isempty(className) && ~strcmp(callType,'client-server')
     end
     % gateways
     for i=1:length(template)
-        [cmd,script]=gatewayCompile(compilerOptimization,folder,...
-                                    fsfullfile(classFolder,template(i).MEXfunction),verboseLevel);
+        [cmd,script]=gatewayCompile(compilerOptimization,cmexFolder,...
+                                    fsfullfile(cmexFolder,template(i).MEXfunction),verboseLevel);
         for j=1:length(script)
             fprintf(fic,'       %s\n',script{j});
         end
