@@ -572,7 +572,8 @@ for t=1:length(template)
             template(t).inputs(i).msizes{end+1}='1';
         end
         % squeeze out trailing singleton dimensions
-        while length(template(t).inputs(i).msizes)>2 && template(t).inputs(i).msizes{end}=='1' 
+
+        while length(template(t).inputs(i).msizes)>2 && isequal(template(t).inputs(i).msizes{end},'1')
             template(t).inputs(i).msizes(end)=[];
         end
     end
@@ -603,7 +604,7 @@ for t=1:length(template)
             template(t).outputs(i).msizes{end+1}='1';
         end
         % squeeze out trailing singleton dimensions
-        while length(template(t).outputs(i).msizes)>2 && template(t).outputs(i).msizes{end}=='1' 
+        while length(template(t).outputs(i).msizes)>2 && isequal(template(t).outputs(i).msizes{end},'1' )
             template(t).outputs(i).msizes(end)=[];
         end
     end
@@ -2072,7 +2073,7 @@ end
 function [wholeline,openComment]=cleanupLine(wholeline,openComment)
     
     %fprintf('  "%s"',wholeline);
-    
+
     if openComment
         % end of comment
         if ~isempty(regexp(wholeline,'\*/'))
@@ -2122,6 +2123,7 @@ function [preprocess,nextline,linenum]=readPreprocess(fcmext,linenum,args);
     
     preprocess=sprintf('(%s)\n',args);
     
+    openComment=false;
     while 1
         linenum=linenum+1;
         nextline=fgetl(fcmext);
@@ -2130,7 +2132,7 @@ function [preprocess,nextline,linenum]=readPreprocess(fcmext,linenum,args);
             return;
         end
         if ~isempty(regexp(nextline,'^(#endif\s*$|\s*function\s+)','start'))
-            nextline=cleanupLine(nextline);
+            [nextline,openComment]=cleanupLine(nextline,openComment);
             return;
         else
             preprocess=[preprocess,sprintf('%s\n',nextline)];
