@@ -1594,6 +1594,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
 
     %% class method
     if ~isempty(fic)
+        % individual outputs
         fprintf(fic,'     function ');
         sep='[';
         for i=1:length(outputs)
@@ -1628,7 +1629,37 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         end
         fprintf(fic,');\n');
         fprintf(fic,'     end\n');
+        if length(outputs)>0
+            % outputs as a structure
+            fprintf(fic,'     function y=%s_struct(obj',method);
+            for i=1:length(inputs)
+                fprintf(fic,',%s',inputs(i).name);
+            end
+            fprintf(fic,')\n');
+            fprintf(fic,'         ');
+            sep='[';
+            for i=1:length(outputs)
+                fprintf(fic,'%cy.%s',sep,outputs(i).name);
+                sep=',';
+            end
+            if sep==','
+                fprintf(fic,']=');
+            end
+            fprintf(fic,'%s',cmexname);
+            sep='(';
+            for i=1:length(inputs)
+                fprintf(fic,'%c%s',sep,inputs(i).name);
+                sep=',';
+            end
+            if sep=='('
+                fprintf(fic,'(');
+            end
+            fprintf(fic,');\n');
+            fprintf(fic,'     end\n');
+        end
     end
+    
+    
     
     %% Write Gateway header
     if verboseLevel>2
