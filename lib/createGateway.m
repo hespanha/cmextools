@@ -185,6 +185,7 @@ declareParameter(...
         '                ''name'',{},...    % cell-array of strings (one per dimension)'
         '                ''sizes'',{}),...  % cell-array of strings/or numeric array (one per dimension) with original sizes'
         '                ''msizes'',{}),... % cell-array of strings/or numeric array (one per dimension) with matlab-compatible sizes'
+        '                ''default'',{}),...% default value for the input parameter, only used for matlab class'
         '            ''outputs'',struct(...  % string'
         '                ''type'',{},...    % string'
         '                ''name'',{},...    % cell-array of strings (one per dimension)'
@@ -1595,57 +1596,37 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
     %% class method
     if ~isempty(fic)
         % individual outputs
-        fprintf(fic,'     function ');
-        sep='[';
-        for i=1:length(outputs)
-            fprintf(fic,'%c%s',sep,outputs(i).name);
-            sep=',';
+        if isempty(outputs)
+            fprintf(fic,'     function %s(obj',method);
+        else
+            fprintf(fic,'     function [varargout]=%s(obj',method);
         end
-        if sep==','
-            fprintf(fic,']=');
-        end
-        fprintf(fic,'%s(obj',method);
         for i=1:length(inputs)
             fprintf(fic,',%s',inputs(i).name);
         end
         fprintf(fic,')\n');
-        fprintf(fic,'         ');
-        sep='[';
-        for i=1:length(outputs)
-            fprintf(fic,'%c%s',sep,outputs(i).name);
-            sep=',';
-        end
-        if sep==','
-            fprintf(fic,']=');
-        end
-        fprintf(fic,'%s',cmexname);
-        sep='(';
+        % defaults
         for i=1:length(inputs)
-            fprintf(fic,'%c%s',sep,inputs(i).name);
-            sep=',';
-        end
-        if sep=='('
-            fprintf(fic,'(');
-        end
-        fprintf(fic,');\n');
-        fprintf(fic,'     end\n');
-        if length(outputs)>0
-            % outputs as a structure
-            fprintf(fic,'     function y=%s_struct(obj',method);
-            for i=1:length(inputs)
-                fprintf(fic,',%s',inputs(i).name);
+            if isfield(inputs(i),'default')
+                fprintf(fic,'         if nargin<%d\n',i+1);
+                fprintf(fic,'           %s=%s(%s)\n',...
+                        inputs(i).name,inputs(i).type,mymat2str(inputs(i).default));
+                fprintf(fic,'         end\n');
             end
-            fprintf(fic,')\n');
-            fprintf(fic,'         ');
-            sep='[';
-            for i=1:length(outputs)
-                fprintf(fic,'%cy.%s',sep,outputs(i).name);
+        end
+        if isempty(outputs)
+            fprintf(fic,'         %s',cmexname);
+            sep='(';
+            for i=1:length(inputs)
+                fprintf(fic,'%c%s',sep,inputs(i).name);
                 sep=',';
             end
-            if sep==','
-                fprintf(fic,']=');
+            if sep=='('
+                fprintf(fic,'(');
             end
-            fprintf(fic,'%s',cmexname);
+            fprintf(fic,');\n');            
+        elseif length(outputs)==1
+            fprintf(fic,'         varargout={%s}',cmexname);
             sep='(';
             for i=1:length(inputs)
                 fprintf(fic,'%c%s',sep,inputs(i).name);
@@ -1655,8 +1636,38 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
                 fprintf(fic,'(');
             end
             fprintf(fic,');\n');
-            fprintf(fic,'     end\n');
+        else
+            fprintf(fic,'         if nargout==1\n');
+            fprintf(fic,'           ');
+            sep='[';
+            for i=1:length(outputs)
+                fprintf(fic,'%cvarargout{1}.%s',sep,outputs(i).name);
+                sep=',';
+            end
+            fprintf(fic,']=%s',cmexname);
+            sep='(';
+            for i=1:length(inputs)
+                fprintf(fic,'%c%s',sep,inputs(i).name);
+                sep=',';
+            end
+            if sep=='('
+                fprintf(fic,'(');
+            end
+            fprintf(fic,');\n');
+            fprintf(fic,'         else\n');
+            fprintf(fic,'           [varargout{:}]=%s',cmexname);
+            sep='(';
+            for i=1:length(inputs)
+                fprintf(fic,'%c%s',sep,inputs(i).name);
+                sep=',';
+            end
+            if sep=='('
+                fprintf(fic,'(');
+            end
+            fprintf(fic,');\n');
+            fprintf(fic,'         end\n');
         end
+        fprintf(fic,'     end\n');
     end
     
     
