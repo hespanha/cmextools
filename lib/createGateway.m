@@ -1655,7 +1655,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             end
             fprintf(fic,');\n');
             fprintf(fic,'         else\n');
-            fprintf(fic,'           [varargout{:}]=%s',cmexname);
+            fprintf(fic,'           varargout=cell(nargout,1);[varargout{:}]=%s',cmexname);
             sep='(';
             for i=1:length(inputs)
                 fprintf(fic,'%c%s',sep,inputs(i).name);
