@@ -51,7 +51,7 @@ function classHelp=helpFromTemplate(className,template)
         end
         if length(template(t).outputs)>0
             % outputs as a structure
-            classHelp{end+1}=['  y (struct) = ',template(t).method,'_struct(obj'];
+            classHelp{end+1}=['  y (struct) = ',template(t).method,'(obj'];
             if ~isempty(template(t).inputs)
                 for i=1:length(template(t).inputs)
                     msize=template(t).inputs(i).sizes;
