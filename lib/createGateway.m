@@ -629,6 +629,9 @@ for t=1:length(template)
     if ~isfield(template(t),'code')
         template(t).code='';
     end
+    if ~isfield(template(t),'help')
+        template(t).help='';
+    end
 
     % determine "sizes" variables
     template(t).sizes={};
@@ -1626,7 +1629,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             end
             fprintf(fic,');\n');            
         elseif length(outputs)==1
-            fprintf(fic,'         varargout={%s}',cmexname);
+            fprintf(fic,'         varargout={%s',cmexname);
             sep='(';
             for i=1:length(inputs)
                 fprintf(fic,'%c%s',sep,inputs(i).name);
@@ -1635,7 +1638,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             if sep=='('
                 fprintf(fic,'(');
             end
-            fprintf(fic,');\n');
+            fprintf(fic,')};\n');
         else
             fprintf(fic,'         if nargout==1\n');
             fprintf(fic,'           ');

@@ -189,9 +189,10 @@ To install
     (steps 2 above).
 
 
-5. To test if all is well, go to `cmextools/examples` and execute
+5. To test if all is well, go to `cmextools` and execute
 
 	```matlab
+	cd examples
 	templateFromFile
 	templateFromStruct
 	templateFromStruct_dylib
