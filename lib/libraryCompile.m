@@ -48,7 +48,7 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
 % along with TensCalc.  If not, see <http://www.gnu.org/licenses/>.
 
     mroot=strrep(matlabroot(),'\','/');
-
+    
     include_paths={...
         fsfullfile(mroot,'include');
         fsfullfile(mroot,'extern','include') };
@@ -66,17 +66,16 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
         compilerOptimization=strrep(compilerOptimization,'-O1','/O1');
     end
     
-    if ~isempty(findSuiteSparse())
-        include_paths{end+1,1}=fsfullfile(findSuiteSparse(),'include');
-        library_paths{end+1,1}=fsfullfile(findSuiteSparse(),'lib');
-        libraries{end+1,1}='umfpack';
-    end
+    paths=findSuiteSparse();
+    include_paths={include_paths{:},paths.include_paths{:}};
+    library_paths={library_paths{:},paths.library_paths{:}};
+    libraries={libraries{:},paths.libraries{:}};
+    libraries_pcwin64={libraries_pcwin64{:},paths.libraries{:}};
 
-    library_paths_pcwin64=[library_paths;
-                        {fsfullfile(mroot,'bin','win64');...
-                        fsfullfile(mroot,'extern/lib/win64/microsoft');};
-                   ];
-   
+    library_paths_pcwin64={library_paths{:},...
+                        fsfullfile(mroot,'bin','win64'),...
+                        fsfullfile(mroot,'extern/lib/win64/microsoft')};
+    
     templates.maci64=['clang',...
                       concat(' -I"%s"',include_paths),...
                       concat(' -L"%s"',library_paths),...

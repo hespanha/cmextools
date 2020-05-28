@@ -36,11 +36,10 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
     
     libraries={'stdc++'};
     
-    if ~isempty(findSuiteSparse())
-        include_paths{end+1,1}=fsfullfile(findSuiteSparse(),'include');
-        library_paths{end+1,1}=fsfullfile(findSuiteSparse(),'lib');
-        libraries{end+1,1}='umfpack';
-    end
+    paths=findSuiteSparse();
+    include_paths={include_paths{:},paths.include_paths{:}};
+    library_paths={library_paths{:},paths.library_paths{:}};
+    libraries={libraries{:},paths.libraries{:}};
 
     library_paths_pcwin64=[library_paths;
                         {fsfullfile(mroot,'bin','win64');...

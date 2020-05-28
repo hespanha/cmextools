@@ -45,19 +45,12 @@ function [cmd,script]=gatewayCompile(compilerOptimization,mexfolder,mexname,verb
 
     mroot=strrep(matlabroot(),'\','/');
 
-    include_paths={};
-    
-    library_paths={};    
-    
-    libraries={};
-    
-    if ~isempty(findSuiteSparse())
-        include_paths{end+1,1}=fsfullfile(findSuiteSparse(),'include');
-        library_paths{end+1,1}=fsfullfile(findSuiteSparse(),'lib');
-        libraries{end+1,1}='umfpack';
-    end
+    paths=findSuiteSparse();
+    include_paths=paths.include_paths;
+    library_paths=paths.library_paths;
+    libraries=paths.libraries;
 
-    libraries_glnxa64=[libraries;{'dl'}];
+    libraries_glnxa64={libraries{:},'dl'};
     
     templates.maci64=['mex -largeArrayDims',...
                       concat(' -I"%s"',include_paths),...
