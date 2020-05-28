@@ -19,7 +19,7 @@ function out=findSuiteSparse();
     out=struct('include_paths',{{}},'library_paths',{{}},'libraries',{{}});
     
     paths=which('umfpack');
-    paths='/Users/hespanha/GitHub/tenscalc/TimDavis/SuiteSparse/UMFPACK/MATLAB/umfpack.m';
+    %paths='/Users/hespanha/GitHub/tenscalc/TimDavis/SuiteSparse/UMFPACK/MATLAB/umfpack.m';
     if ~isempty(paths)
         [paths,name,ext]=fileparts(paths);
         
