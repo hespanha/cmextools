@@ -107,7 +107,10 @@ To install
 	  > 	 https://www.mathworks.com/help/matlab/matlab_external/upgrading-mex-files-to-use-64-bit-api.html.
 
       *Matlab 2018a* requires gcc version 6.3, which you can install using the instructions at https://gist.github.com/application2000/73fd6f4bf1be6600a2cf9f56315a2d91
-	  	  
+	  
+	  However, more recent versions of gcc (e.g., 7.5.0) seem to work,
+      in spite of the scary warning messages.
+		  
 	  In addition to gcc, cmex also uses `clang` to generate
       dynamics libraries which is much faster for large source
       files. E.g., in ubuntu, you can install `clang` using
@@ -189,10 +192,9 @@ To install
     (steps 2 above).
 
 
-5. To test if all is well, go to `cmextools` and execute
+5. To test if all is well, go to `cmextools/examples` and execute
 
 	```matlab
-	cd examples
 	templateFromFile
 	templateFromStruct
 	templateFromStruct_dylib
