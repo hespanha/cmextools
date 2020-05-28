@@ -108,7 +108,7 @@ To install
 
       *Matlab 2018a* requires gcc version 6.3, which you can install using the instructions at https://gist.github.com/application2000/73fd6f4bf1be6600a2cf9f56315a2d91
 	  	  
-	  In addition to gcc, you cmex also uses `clang` to generate
+	  In addition to gcc, cmex also uses `clang` to generate
       dynamics libraries which is much faster for large source
       files. E.g., in ubuntu, you can install `clang` using
 	  

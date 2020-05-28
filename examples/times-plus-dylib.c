@@ -89,7 +89,6 @@ static void initializer(void) {
 /* Finalizer */
 __attribute__((destructor))
 static void finalizer(void) {
-  free(scratchbook);
   printf("%s: freed scrapbook, unloading dynamic library\n", __FILE__);
 }
 #elif _WIN32
