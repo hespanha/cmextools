@@ -428,7 +428,10 @@ declareParameter(...
         'When non empty, a class is created that encapsulates all the'
         'gateway functions as methods.'
         'When a dynamicLibrary is used, the class creation loads the library';
-        'and the class delete unloads the library.'
+        'and the class delete unloads the library.';
+        ' ';
+        'When a dynamic library is used, the class methods will the library'
+        'directly using ''calllib''.'
                    });
 
 declareParameter(...
@@ -453,6 +456,8 @@ declareOutput(...
 if stopNow
     return 
 end
+
+callLibrary=ismember(callType,{'dynamicLibrary'});
 
 %verboseLevel=4;
 
@@ -680,17 +685,28 @@ else
     %% create class creation method
     fprintf(fic,'     function obj=%s()\n',className);
     if ismember(callType,{'dynamicLibrary'})
-        fprintf(fic,'       %s_load(1);\n',dynamicLibrary);
+        if callLibrary
+            fprintf(fic,'            [notfound,warnings]=loadlibrary(''%s'',''%s.h'');\n',dynamicLibrary_dlopen,dynamicLibrary_dlopen);
+        else            
+            fprintf(fic,'       load(obj,1);\n',dynamicLibrary);            
+            %fprintf(fic,'       %s_load(1);\n',dynamicLibrary);            
+        end
     end
     fprintf(fic,'     end %% %s()\n',className);
     %% create class delete method
     if ismember(callType,{'dynamicLibrary'})
         fprintf(fic,'     function delete(obj)\n');
         if 1
-            fprintf(fic,'       fprintf(''deleting object, clear mex, unloading library %s;\\n'');\n',dynamicLibrary);
-            fprintf(fic,'       clear mex;%s_load(0);\n',dynamicLibrary);
+            fprintf(fic,'         fprintf(''deleting object, clear mex, unloading library %s;\\n'');\n',dynamicLibrary);
+            if callLibrary
+                fprintf(fic,'         unloadlibrary(''%s'');\n',dynamicLibrary);
+            else
+                %fprintf(fic,'       clear mex;%s_load(0);\n',dynamicLibrary);
+                fprintf(fic,'         clear mex;load(obj,0);\n',dynamicLibrary);            
+            end
+            
         else
-            fprintf(fic,'       fprintf(''deleting object, but not unloading library\\n'');\n');
+            fprintf(fic,'         fprintf(''deleting object, but not unloading library\\n'');\n');
         end
         fprintf(fic,'     end %% delete()\n');
     end
@@ -719,7 +735,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Add code to be executed to template structure
-template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dlopen,cmexFolder,...
+template=computeCode(template,callType,callLibrary,dynamicLibrary,dynamicLibrary_dlopen,cmexFolder,...
                      CfunctionsSource,targetComputer,compilerOptimization,...
                      serverComputer,serverProgramName,serverAddress,port,MAGIC,...
                      verboseLevel);
@@ -736,7 +752,7 @@ for i=1:length(template)
                  defines,template(i).includes,template(i).code,...
                  template(i).preprocess,preprocessParameters,...
                  template(i).callCfunction,template(i).method,...
-                 cmexFolder,fic,callType,compilerOptimization,...
+                 cmexFolder,fic,callType,callLibrary,compilerOptimization,...
                  dynamicLibrary,template(end),...
                  dummySimulinkIOs,...
                  verboseLevel);
@@ -1112,7 +1128,7 @@ end
 %% Add code to be executed to the template structure
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dlopen,folder,...
+function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynamicLibrary_dlopen,folder,...
                               CfunctionsSource,targetComputer,compilerOptimization,...
                               serverComputer,serverProgramName,serverAddress,port,magic,...
                               verboseLevel)
@@ -1518,7 +1534,7 @@ function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dl
         fclose(fmid);
     end
 
-    if strcmp(callType,'dynamicLibrary')
+    if strcmp(callType,'dynamicLibrary') && ~callLibrary
         template(end+1).MEXfunction=sprintf('%s_load',dynamicLibrary);
         template(end).Sfunction='';
         template(end).method='load';
@@ -1589,7 +1605,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
                       defines,includes,code,...
                       preprocess,preprocessParameters,...
                       callCfunction,method,...
-                      classFolder,fic,callType,compilerOptimization,...
+                      classFolder,fic,callType,callLibrary,compilerOptimization,...
                       dynamicLibrary,templateLoad,...
                       dummySimulinkIOs,...
                       verboseLevel)
@@ -1598,7 +1614,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
 
     %% class method
     if ~isempty(fic)
-        % individual outputs
+        % create 'function' declaration
         if isempty(outputs)
             fprintf(fic,'     function %s(obj',method);
         else
@@ -1608,72 +1624,100 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             fprintf(fic,',%s',inputs(i).name);
         end
         fprintf(fic,')\n');
-        % defaults
         for i=1:length(inputs)
+            % assign default values to inputs
             if isfield(inputs(i),'default')
                 fprintf(fic,'         if nargin<%d\n',i+1);
                 fprintf(fic,'           %s=%s([%s]);\n',...
                         inputs(i).name,inputs(i).type,mymat2str(inputs(i).default));
                 fprintf(fic,'         end\n');
             end
+            if callLibrary
+                % check inputs types and size
+                fprintf(fic,'         if ~isa(%s,''%s'')\n',inputs(i).name,inputs(i).type);
+                fprintf(fic,'           error(''%s: input %s should be of type %s and not %%s\\n'',class(%s))\n',...
+                        method,inputs(i).name,inputs(i).type,inputs(i).name);
+                fprintf(fic,'         end\n');
+                sz=str2double(inputs(i).msizes);
+                if ~any(isnan(sz))
+                    % method only check sizes if all sizes are numeric
+                    fprintf(fic,'         if ~isequal(size(%s),[%s])\n',inputs(i).name,mymat2str(sz));
+                    fprintf(fic,'           error(''%s: input %s should have size [%s] and not %%s\\n'',mat2str(size(%s)))\n',...
+                            method,inputs(i).name,mymat2str(sz),inputs(i).name);
+                    fprintf(fic,'         end\n');
+                else
+                    error('checking non-numeric sizes not implemented when calling the library directly');
+                end
+            end
         end
-        if isempty(outputs)
-            fprintf(fic,'         %s',cmexname);
-            sep='(';
+        if callLibrary
+            % create outputs
+            for i=1:length(outputs)
+                sz=str2double(outputs(i).msizes);
+                if strcmp(outputs(i).type,'sparse')
+                    fprintf(fic,'         %s=sparse([],[],[],%s);\n',outputs(i).name,index2str(sz));                    
+                else
+                    fprintf(fic,'         %s=zeros(%s,''%s'');\n',outputs(i).name,index2str(sz),outputs(i).type);
+                end
+            end
+        end
+        fprintf(fic,'         ');
+        sep='[';
+        if callLibrary
+            % call lib assumed inputs may actually be outputs passed by reference
             for i=1:length(inputs)
-                fprintf(fic,'%c%s',sep,inputs(i).name);
+                fprintf(fic,'%c~',sep);
                 sep=',';
             end
-            if sep=='('
-                fprintf(fic,'(');
-            end
-            fprintf(fic,');\n');            
-        elseif length(outputs)==1
-            fprintf(fic,'         varargout={%s',cmexname);
-            sep='(';
-            for i=1:length(inputs)
-                fprintf(fic,'%c%s',sep,inputs(i).name);
-                sep=',';
-            end
-            if sep=='('
-                fprintf(fic,'(');
-            end
-            fprintf(fic,')};\n');
+        end
+        for i=1:length(outputs)
+            fprintf(fic,'%c%s',sep,outputs(i).name);
+            sep=',';
+        end
+        if sep ~= '['
+            fprintf(fic,']=');
+        end
+        if callLibrary
+            fprintf(fic,'calllib(''%s'',''%s''',dynamicLibrary,Cfunction);                
+            sep=',';
         else
+            fprintf(fic,'         %s',cmexname);
+                sep='(';
+        end
+        for i=1:length(inputs)
+            fprintf(fic,'%c%s',sep,inputs(i).name);
+            sep=',';
+        end
+        if callLibrary
+            for i=1:length(outputs)
+                fprintf(fic,'%c%s',sep,outputs(i).name);
+                sep=',';
+            end
+        end
+        if sep=='('
+            fprintf(fic,'(');
+        end
+        fprintf(fic,');\n');
+        if length(outputs)==1
+            fprintf(fic,'         varargout={%s};\n',outputs(1).name);
+        elseif length(outputs)>1
             fprintf(fic,'         if nargout==1\n');
-            fprintf(fic,'           ');
             sep='[';
             for i=1:length(outputs)
-                fprintf(fic,'%cvarargout{1}.%s',sep,outputs(i).name);
-                sep=',';
+                fprintf(fic,'           varargout{1}.%s=%s;\n',outputs(i).name,outputs(i).name);
             end
-            fprintf(fic,']=%s',cmexname);
-            sep='(';
-            for i=1:length(inputs)
-                fprintf(fic,'%c%s',sep,inputs(i).name);
-                sep=',';
-            end
-            if sep=='('
-                fprintf(fic,'(');
-            end
-            fprintf(fic,');\n');
             fprintf(fic,'         else\n');
-            fprintf(fic,'           varargout=cell(nargout,1);[varargout{:}]=%s',cmexname);
-            sep='(';
-            for i=1:length(inputs)
-                fprintf(fic,'%c%s',sep,inputs(i).name);
+            fprintf(fic,'           varargout=');
+            sep='{';
+            for i=1:length(outputs)
+                fprintf(fic,'%c%s',sep,outputs(i).name);
                 sep=',';
             end
-            if sep=='('
-                fprintf(fic,'(');
-            end
-            fprintf(fic,');\n');
+            fprintf(fic,'};\n');
             fprintf(fic,'         end\n');
         end
         fprintf(fic,'     end\n');
     end
-    
-    
     
     %% Write Gateway header
     if verboseLevel>2
@@ -1815,11 +1859,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         fprintf(sfid,'   if (!ssSetNumInputPorts(S,%d)) return;\n',...
                 length(inputs)+dummySimulinkIOs);
         for i=1:length(inputs)
-            % pad sizes to 1
-            while length(inputs(i).sizes)<1
-                inputs(i).sizes{end+1}='1';
-            end
-            sz=str2double(inputs(i).sizes);
+            sz=str2double(inputs(i).msizes);
             if any(isnan(sz))
                 warning('Creation of Simulink S-function only supports fixed sizes, ''%s'' found for input %d\n',index2str(sz),i);                
             end
@@ -1843,11 +1883,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         fprintf(sfid,'   if (!ssSetNumOutputPorts(S,%d)) return;\n',...
                 length(outputs)+dummySimulinkIOs);
         for i=1:length(outputs)
-            % pad sizes to 1
-            while length(outputs(i).sizes)<1
-                outputs(i).sizes{end+1}='1';
-            end
-            sz=str2double(outputs(i).sizes);
+            sz=str2double(outputs(i).msizes);
             if any(isnan(sz))
                 warning('Creation of Simulink S-function only supports fixed sizes, ''%s'' found for output %d\n',index2str(sz),i);                
             end
