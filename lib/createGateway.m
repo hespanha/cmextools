@@ -2011,7 +2011,11 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
                 cmexname,i,inputs(i).name,inputs(i).type);
         % fprintf(fid,'mexPrintf("debug at %d\\n");\n',debugCount);debugCount=debugCount+1;
         % get pointer
-        fprintf(fid,'   %s=mxGetData(prhs[%d]);\n',inputs(i).name,i-1);
+        if strcmp(inputs(i).type,'char')
+            fprintf(fid,'   %s=mxArrayToString(prhs[%d]);\n',inputs(i).name,i-1);
+        else
+            fprintf(fid,'   %s=mxGetData(prhs[%d]);\n',inputs(i).name,i-1);
+        end
     end
     
     % fprintf(fid,'mexPrintf("debug at %d\\n");\n',debugCount);debugCount=debugCount+1;
@@ -2234,7 +2238,7 @@ function str=matlab2Ctype(str)
         str=sprintf('%s_t',str);
       case {'sparse'}
         str='mxArray';
-      case {'double','single'}
+      case {'double','single','char'}
       otherwise
         error('createGateway: unknown type %s\n',str);
     end
@@ -2244,6 +2248,8 @@ end
 function str=matlab2CtypeTest(str)
     
     switch (str)
+      case 'char'
+        str='mxIsChar';
       case 'uint8'
         str='mxIsUint8';
       case 'uint16'
