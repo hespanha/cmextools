@@ -5,7 +5,7 @@ function template=cmextoolsTemplate()
                     'Cfunction',{},...  % string
                     'method',{},...     % string
                     'help',{},...       % string
-                    'inputs',struct(...  
+                    'inputs',struct(...
                         'type',{},...   % string
                         'name',{},...   % cell-array of strings (one per dimension)
                         'sizes',{}),... % cell-array of strings (one per dimension)

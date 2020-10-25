@@ -1,6 +1,6 @@
 function classHelp=helpFromTemplate(className,template)
 % Automatically generate help from createGateway templates
-    
+
     classHelp={'Create object';
                sprintf('  obj=%s();',className)};
     classHelp{end+1}='Methods';
@@ -76,5 +76,5 @@ function classHelp=helpFromTemplate(className,template)
             end
         end
     end
-    
+
 end

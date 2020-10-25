@@ -40,7 +40,7 @@ declareParameter(...
         '   and called directly from the gateway function.';
         '   In this case, source code must be provided for each c-function to be';
         '   included in the gateway function using a #include preprocessor directive.';
-        '2) The c-functions are part of a dynamic library that is linked to the'     
+        '2) The c-functions are part of a dynamic library that is linked to the'
         '   cmex-functions in run time.';
         '   In this case, source code for the dynamic Library must be provided as a single';
         '   file, which will be compiled as a dynamic library.'
@@ -447,14 +447,14 @@ declareOutput(...
     'Description', {
         'Structure with various statistics, including the file sizes and compilations times'
         });
-                    
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Retrieve parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [stopNow,parameters]=setParameters(nargout,varargin);
 if stopNow
-    return 
+    return
 end
 
 callLibrary=ismember(callType,{'dynamicLibrary'});
@@ -649,7 +649,7 @@ for t=1:length(template)
             end
         end
     end
-    
+
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -666,7 +666,7 @@ else
         error('unable to create file ''%s''\n',name);
     end
     fprintf(fic,'classdef %s < handle\n',className);
-    
+
     if isempty(classHelp)
         classHelp=helpFromTemplate(className,template);
     end
@@ -687,9 +687,9 @@ else
     if ismember(callType,{'dynamicLibrary'})
         if callLibrary
             fprintf(fic,'            [notfound,warnings]=loadlibrary(''%s'',''%s.h'');\n',dynamicLibrary_dlopen,dynamicLibrary_dlopen);
-        else            
-            fprintf(fic,'       load(obj,1);\n',dynamicLibrary);            
-            %fprintf(fic,'       %s_load(1);\n',dynamicLibrary);            
+        else
+            fprintf(fic,'       load(obj,1);\n',dynamicLibrary);
+            %fprintf(fic,'       %s_load(1);\n',dynamicLibrary);
         end
     end
     fprintf(fic,'     end %% %s()\n',className);
@@ -702,9 +702,9 @@ else
                 fprintf(fic,'         unloadlibrary(''%s'');\n',dynamicLibrary);
             else
                 %fprintf(fic,'       clear mex;%s_load(0);\n',dynamicLibrary);
-                fprintf(fic,'         clear mex;load(obj,0);\n',dynamicLibrary);            
+                fprintf(fic,'         clear mex;load(obj,0);\n',dynamicLibrary);
             end
-            
+
         else
             fprintf(fic,'         fprintf(''deleting object, but not unloading library\\n'');\n');
         end
@@ -797,11 +797,11 @@ if compileStandalones
         end
         fprintf('done compiling %d standalones (%.2f sec)\n',...
                 length(template),etime(clock,t1));
-    elseif strcmp(callType,'client-server') 
+    elseif strcmp(callType,'client-server')
         standaloneCompile(serverComputer,compilerOptimization,...
                           fsfullfile(cmexFolder,serverProgramName),verboseLevel);
     end
-end    
+end
 
 statistics=struct();
 %% Create dynamic library
@@ -831,7 +831,7 @@ if ismember(callType,{'dynamicLibrary'}) && compileLibrary
     fprintf(fih,'#else\n');
     fprintf(fih,'#define EXPORT \n');
     fprintf(fih,'#endif\n');
-    
+
     for i=1:length(template)
         if ~isempty(template(i).Cfunction)
             fprintf(fih,'EXPORT void %s(%s);\n',template(i).Cfunction,...
@@ -845,7 +845,7 @@ if ismember(callType,{'dynamicLibrary'}) && compileLibrary
                               CfunctionsSource,dynamicLibraryWithPath,verboseLevel);
 end
 
-%% Create compile class 
+%% Create compile class
 if ~isempty(className) && ~strcmp(callType,'client-server')
     %% create compile method
     fprintf(fic,'     function compile(obj,compilerOptimization)\n');
@@ -861,7 +861,7 @@ if ~isempty(className) && ~strcmp(callType,'client-server')
     fprintf(fic,'         otherwise\n');
     fprintf(fic,'           error(''unsupported computer ''''%%s''''\\n'',computer);\n');
     fprintf(fic,'       end\n');
-    
+
     % library
     [cmd,script]=libraryCompile(compilerOptimization,...
                                 CfunctionsSource,dynamicLibraryWithPath,verboseLevel);
@@ -881,7 +881,7 @@ if ~isempty(className) && ~strcmp(callType,'client-server')
 end
 
 if ~isempty(className)
-    %% Close class definition 
+    %% Close class definition
     fprintf(fic,'   end %% methods\n');
     fprintf(fic,'end %% classdef\n');
     fclose(fic);
@@ -909,9 +909,9 @@ if ~isempty(simulinkLibrary)
             set_param(blockName,'SFunctionModules','');
             [xx,yy]=ind2sub([1,50],t);
             set_param(blockName,'position',[600*(xx-.9),150*(yy-.75),600*(xx-.25),150*(yy-.25)]);
-            
+
             blockPorts=get_param(blockName,'PortHandles');
-            
+
             % connect inputs to constant blocks of appropriate zeros
             for i=1:length(template(t).inputs)
                 sz=str2double(template(t).inputs(i).sizes);
@@ -923,7 +923,7 @@ if ~isempty(simulinkLibrary)
                 cPorts=get_param(cName,'PortHandles');
                 add_line(simulinkLibrary,cPorts.Outport(1),blockPorts.Inport(i));
             end
-            
+
             if dummySimulinkIOs
                 i=length(template(t).inputs)+1;
                 cName=sprintf('%s/cdummy%d',simulinkLibrary,t);
@@ -961,8 +961,8 @@ if ~isempty(simulinkLibrary)
         end
     end
 
-    save_system(simulinkLibrary);    
-    fprintf('done (%.2f sec)\n',etime(clock,t1));    
+    save_system(simulinkLibrary);
+    fprintf('done (%.2f sec)\n',etime(clock,t1));
 end
 
 %% load library
@@ -995,12 +995,12 @@ end
 function template=readTemplate(template,verboseLevel)
 
     fcmext=fopen(template);
-    
+
     template=struct('MEXfunction',{},...   % string
                     'Sfunction',{},...  % string
                     'Cfunction',{},...  % string
                     'method',{},...  % string
-                    'inputs',struct(...  
+                    'inputs',struct(...
                         'type',{},...   % string
                         'name',{},...   % cell-array of strings (one per dimension)
                         'sizes',{}),... % cell-array of strings (one per dimension)
@@ -1017,18 +1017,18 @@ function template=readTemplate(template,verboseLevel)
         if verboseLevel>2
             fprintf('  %d: "%s"\n',linenum,nextline);
         end
-        
+
         % #endif
         if isempty(nextline) || ~isempty(regexp(nextline,'^#endif$','start'))
             return
         end
-        
+
         % #ifdef createGateway ?
         if ~isempty(regexp(nextline,'^#ifdef\s+createGateway$','start'))
             [nextline,linenum]=getLine(fcmext,linenum);
             continue;
         end
-        
+
         % function xxxx
         S=regexp(nextline,'^MEXfunction\s+(\w+)$','tokens');
         if ~isempty(S)
@@ -1042,7 +1042,7 @@ function template=readTemplate(template,verboseLevel)
             [nextline,linenum]=getLine(fcmext,linenum);
             continue;
         end
-        
+
         % inputs
         S=regexp(nextline,'^inputs$','tokens');
         if ~isempty(S)
@@ -1050,7 +1050,7 @@ function template=readTemplate(template,verboseLevel)
                 readVariables(fcmext,linenum,template(end).inputs);
             continue;
         end
-        
+
         % outputs
         S=regexp(nextline,'^outputs$','tokens');
         if ~isempty(S)
@@ -1058,7 +1058,7 @@ function template=readTemplate(template,verboseLevel)
                 readVariables(fcmext,linenum,template(end).outputs);
             continue;
         end
-        
+
         % include xxxx
         S=regexp(nextline,'^include\s+([-//\\\w.]+)$','tokens');
         if ~isempty(S)
@@ -1066,7 +1066,7 @@ function template=readTemplate(template,verboseLevel)
             [nextline,linenum]=getLine(fcmext,linenum);
             continue;
         end
-        
+
         % Cfunction xxxx
         S=regexp(nextline,'^Cfunction\s+(\w+)$','tokens');
         if ~isempty(S)
@@ -1078,7 +1078,7 @@ function template=readTemplate(template,verboseLevel)
             [nextline,linenum]=getLine(fcmext,linenum);
             continue;
         end
-                
+
         % Sfunction xxxx
         S=regexp(nextline,'^SSfunction\s+(\w+)$','tokens');
         if ~isempty(S)
@@ -1090,7 +1090,7 @@ function template=readTemplate(template,verboseLevel)
             [nextline,linenum]=getLine(fcmext,linenum);
             continue;
         end
-                
+
         % method xxxx
         S=regexp(nextline,'^method\s+(\w+)$','tokens');
         if ~isempty(S)
@@ -1102,7 +1102,7 @@ function template=readTemplate(template,verboseLevel)
             [nextline,linenum]=getLine(fcmext,linenum);
             continue;
         end
-                
+
         % preprocess( ... )
         S=regexp(nextline,'^preprocess\(([\w,]+)\)$','tokens');
         if ~isempty(S)
@@ -1114,14 +1114,14 @@ function template=readTemplate(template,verboseLevel)
                 readPreprocess(fcmext,linenum,S{1}{1});
             continue;
         end
-        
+
         fprintf('%d: "%s"\n',linenum,nextline);
         error('createGateway: unexpected command in line %d\n',linenum);
 
     end
 
     fclose(fcmext);
-    
+
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1176,13 +1176,13 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
 
     for t=1:length(template)
         switch callType
-            
+
           case 'include'
             template(t).callCfunction=sprintf(...
                 '   %s(%s);\n',template(t).Cfunction,...
                 callArguments4Cfunction(template(t).inputs,...
                                         template(t).outputs,template(t).sizes));
-            
+
           case 'dynamicLibrary'
             template(t).callCfunction='';
             if verboseLevel>3
@@ -1234,14 +1234,14 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
                 template(t).callCfunction=[template(t).callCfunction,sprintf('   printf("call %s (after):\tP%s=%%lx\\n",P%s);\n',template(t).Cfunction,template(t).Cfunction,template(t).Cfunction)];
                 template(t).callCfunction=[template(t).callCfunction,sprintf('   printf("\t\t\tlibHandle=%%lx\\n",libHandle);\n')];
             end
-            
+
             template(t).callCfunction=[template(t).callCfunction,sprintf('   P%s(%s);\n',...
                                                               template(t).Cfunction,...
                                                               callArguments4Cfunction(...
                                                                   template(t).inputs,...
                                                                   template(t).outputs,...
                                                                   template(t).sizes))];
-        
+
           case 'standalone'
             % save data to file
             template(t).callCfunction=sprintf(' { int fid=open("%s.bin",O_CREAT|O_RDWR|O_TRUNC,S_IRUSR|S_IWUSR);\n',...
@@ -1280,7 +1280,7 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
                                 sprintf('   /* call standalone program */\n')];
             template(t).callCfunction=[template(t).callCfunction,...
                                 sprintf('      system("%s_salone");\n',template(t).MEXfunction)];
-            
+
             % read outputs
             if length(template(t).outputs)>0
                 template(t).callCfunction=[template(t).callCfunction,...
@@ -1298,10 +1298,10 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
                                             template(t).outputs(i).name,...
                                             template(t).outputs(i).length)];
             end
-            
+
             template(t).callCfunction=[template(t).callCfunction,...
                                 sprintf('   close(fid); }\n')];
-            
+
             %% create standalone main()
             cfilename=sprintf('%s_salone.c',template(t).MEXfunction);
             fmid=fopen(cfilename,'w');
@@ -1323,24 +1323,24 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
             fprintf(fmid,'#include <stdio.h>\n');
             fprintf(fmid,'#include <matrix.h>\n');
             fprintf(fmid,'#define mexPrintf(...) fprintf (stderr, __VA_ARGS__)\n\n');
-            
+
             % declare function that does work
             fprintf(fmid,'extern void %s(%s);\n\n',template(t).Cfunction,...
                     declareArguments4Cfunction(template(t).inputs,...
                                                template(t).outputs,template(t).sizes));
-            
+
             if size(template(t).includes,1)>0
                 fprintf(fmid,'#include "%s"\n',template(t).includes{:});
                 fprintf(fmid,'\n');
             end
-            
+
             fprintf(fmid,'int main() { \n');
             % open communication file
             fprintf(fmid,'  int fid=open("%s.bin",O_RDWR,0);\n',template(t).MEXfunction);
             fprintf(fmid,'      fprintf(stderr,"%s_salone: fid=%%d (\\"%s.bin\\")\\n",fid);\n',...
                     template(t).MEXfunction,template(t).MEXfunction);
             fprintf(fmid,'      if (fid<0) exit(1);\n');
-            
+
             % declare variables
             fprintf(fmid,'%s',declareVariables(template(t).inputs,...
                                                template(t).outputs,template(t).sizes));
@@ -1395,7 +1395,7 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
             % close main function
             fprintf(fmid,'} // main()\n');
             fclose(fmid);
-            
+
           case 'client-server'
             % send data through pipe
             template(t).callCfunction=sprintf('   /* Send data through pipe */\n');
@@ -1460,7 +1460,7 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
             end
             template(t).callCfunction=[template(t).callCfunction,...
                                 sprintf('    close(fid);\n  }\n');];
-            
+
             %% server's code
             fprintf(fmid,'           case %d: {\n',t);
             fprintf(fmid,'%s',...
@@ -1519,12 +1519,12 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
                 fprintf(fmid,'             free(%s);\n',template(t).outputs(i).name);
             end
             fprintf(fmid,'             break;}\n');
-            
+
           otherwise
             error('createGateway: unknown callType %s\n',callType);
         end
     end
-    
+
     if strcmp(callType,'client-server')
         % close main function
         fprintf(fmid,'      } // switch ()\n');
@@ -1546,7 +1546,7 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
         template(end).includes={};
         template(end).Cfunction='';
         template(end).callCfunction='';
-        
+
         if verboseLevel>3
             template(end).callCfunction=[template(end).callCfunction,sprintf('  printf("%s_load (before):\tlibHandle=%%lx, load=%%lf\\n",libHandle,load[0]);\n',dynamicLibrary)];
         end
@@ -1609,7 +1609,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
                       dynamicLibrary,templateLoad,...
                       dummySimulinkIOs,...
                       verboseLevel)
-    
+
     debugCount=0;
 
     %% class method
@@ -1655,7 +1655,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             for i=1:length(outputs)
                 sz=str2double(outputs(i).msizes);
                 if strcmp(outputs(i).type,'sparse')
-                    fprintf(fic,'         %s=sparse([],[],[],%s);\n',outputs(i).name,index2str(sz));                    
+                    fprintf(fic,'         %s=sparse([],[],[],%s);\n',outputs(i).name,index2str(sz));
                 else
                     fprintf(fic,'         %s=zeros(%s,''%s'');\n',outputs(i).name,index2str(sz),outputs(i).type);
                 end
@@ -1678,7 +1678,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             fprintf(fic,']=');
         end
         if callLibrary
-            fprintf(fic,'calllib(''%s'',''%s''',dynamicLibrary,Cfunction);                
+            fprintf(fic,'calllib(''%s'',''%s''',dynamicLibrary,Cfunction);
             sep=',';
         else
             fprintf(fic,'         %s',cmexname);
@@ -1718,22 +1718,22 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         end
         fprintf(fic,'     end\n');
     end
-    
+
     %% Write Gateway header
     if verboseLevel>2
        fprintf('creating cmex function %s.c (%s)\n',cmexname,Cfunction);
     end
-    cfilename=fsfullfile(classFolder,sprintf('%s.c',cmexname));    
+    cfilename=fsfullfile(classFolder,sprintf('%s.c',cmexname));
     fid=fopen(cfilename,'w');
     if fid<0
         error('createGateway: Unable to create gateway file ''%s''\n',cfilename);
     end
-    
+
     %% Write simulink S-function header
     if ~isempty(Sfunction)
-        sFname=fsfullfile(classFolder,sprintf('%s.c',Sfunction));    
+        sFname=fsfullfile(classFolder,sprintf('%s.c',Sfunction));
         if verboseLevel>2
-            fprintf('creating simulink S-function %s (%s)\n',sFname,Sfunction);        
+            fprintf('creating simulink S-function %s (%s)\n',sFname,Sfunction);
         end
         sfid=fopen(sFname,'w');
         if sfid<0
@@ -1743,9 +1743,9 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         sfid=[];
     end
     fids=[fid,sfid];
-    
+
     %% Write header's
-    
+
     for f=fids
         fprintf(f,'/* Created by script createGateway.m on %s */\n\n',datestr(now));
         includeFile(f,'GPL.c');
@@ -1753,7 +1753,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
     [cmd,scripts]=gatewayCompile(compilerOptimization,classFolder,...
                                  fsfullfile(classFolder,cmexname),verboseLevel);
     fprintf(fid,'/* %s */\n\n',cmd);
-    
+
     for f=fids
         %fprintf(f,'#include <math.>"\n');
         if ismember(callType,{'dynamicLibrary'})
@@ -1769,7 +1769,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         fprintf(f,'#include <inttypes.h>\n');
         fprintf(f,'#include <mex.h>\n\n');
     end
-    
+
     % defines
     for f=fids
         if ~isempty(defines)
@@ -1788,7 +1788,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             end
             fprintf(f,'\n');
         end
-    
+
         switch callType
           case 'include'
             % declare function that does work
@@ -1808,7 +1808,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             fprintf(f,'#include "%s"\n',fsfullfile(ph,'client.c'));
         end
     end
-    
+
     %% Execute preprocess & add includes & code
 
     if verboseLevel>1
@@ -1828,32 +1828,32 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
     if verboseLevel>1
         fprintf('done preprocess() (%.2f sec) ',etime(clock,t1));
     end
-    
+
     for f=fids
         if size(includes,1)>0
             fprintf(f,'#include "%s"\n',includes{:});
             fprintf(f,'\n');
         end
-        
+
         if ~isempty(code)
             fprintf(f,'%s\n',code);
         end
     end
-    
+
     %% Create initializations for S-function
-    
+
     if ~isempty(sfid)
         fprintf(sfid,'#define S_FUNCTION_NAME %s\n',Sfunction);
         fprintf(sfid,'#define S_FUNCTION_LEVEL 2\n');
         fprintf(sfid,'#include "simstruc.h"\n');
         fprintf(sfid,'#define NUM_PARAMS (0)\n\n');
-        
+
         % mdlInitializeSizes
         fprintf(sfid,'static void mdlInitializeSizes(SimStruct *S) {\n');
         fprintf(sfid,'   ssSetNumSFcnParams(S, 0);\n');
 
         fprintf(sfid,'   if (ssGetNumSFcnParams(S) != ssGetSFcnParamsCount(S)) return;\n');
- 
+
 
         fprintf(sfid,'\n   /* Process inputs */\n');
         fprintf(sfid,'   if (!ssSetNumInputPorts(S,%d)) return;\n',...
@@ -1861,7 +1861,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         for i=1:length(inputs)
             sz=str2double(inputs(i).msizes);
             if any(isnan(sz))
-                warning('Creation of Simulink S-function only supports fixed sizes, ''%s'' found for input %d\n',index2str(sz),i);                
+                warning('Creation of Simulink S-function only supports fixed sizes, ''%s'' found for input %d\n',index2str(sz),i);
             end
             %fprintf(sfid,'   ssSetInputPortWidth(S,%d,%d);\n',i-1,sz);
             fprintf(sfid,' { DECL_AND_INIT_DIMSINFO(di);\n');
@@ -1878,14 +1878,14 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             fprintf(sfid,'   ssSetInputPortWidth(S,%d,1);\n',length(inputs));
             fprintf(sfid,'   ssSetInputPortDirectFeedThrough(S,%d,1);\n',length(inputs));
         end
-        
+
         fprintf(sfid,'\n   /* Process outputs */\n');
         fprintf(sfid,'   if (!ssSetNumOutputPorts(S,%d)) return;\n',...
                 length(outputs)+dummySimulinkIOs);
         for i=1:length(outputs)
             sz=str2double(outputs(i).msizes);
             if any(isnan(sz))
-                warning('Creation of Simulink S-function only supports fixed sizes, ''%s'' found for output %d\n',index2str(sz),i);                
+                warning('Creation of Simulink S-function only supports fixed sizes, ''%s'' found for output %d\n',index2str(sz),i);
             end
             %fprintf(sfid,'   ssSetOutputPortWidth(S,%d,%s);\n',i-1,sz);
             fprintf(sfid,' { DECL_AND_INIT_DIMSINFO(di);\n');
@@ -1902,9 +1902,9 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
 
         fprintf(sfid,'\n   ssSetNumSampleTimes(S, 1);\n\n');
         fprintf(sfid,'   ssSetOptions(S, SS_OPTION_EXCEPTION_FREE_CODE|SS_OPTION_CALL_TERMINATE_ON_EXIT);\n');
-     
+
         fprintf(sfid,'}\n\n');
-        
+
         % mdlInitializeSampleTimes
         fprintf(sfid,'static void mdlInitializeSampleTimes(SimStruct *S) {\n');
         fprintf(sfid,'   ssSetSampleTime(S, 0, INHERITED_SAMPLE_TIME);\n');
@@ -1926,11 +1926,11 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             fprintf(sfid,'   P%s=NULL;\n',Cfunction);
         end
         fprintf(sfid,'}\n\n');
-        
+
     end
 
     %% Check and process arguments for mdlOutputs for S-function
-    
+
     if ~isempty(sfid)
         fprintf(sfid,'static void mdlOutputs(SimStruct *S, int_T tid)\n{\n');
 
@@ -1945,7 +1945,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         fprintf(sfid,'   /* Process outputs */\n');
         for i=1:length(outputs)
             fprintf(sfid,'   %s *%s = ssGetOutputPortSignal(S,%d);\n',...
-                    matlab2Ctype(outputs(i).type),outputs(i).name,i-1);            
+                    matlab2Ctype(outputs(i).type),outputs(i).name,i-1);
         end
         if dummySimulinkIOs
             fprintf(sfid,'   double *dummyOut = ssGetOutputPortSignal(S,%d);\n',length(outputs));
@@ -1958,7 +1958,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
     fprintf(fid,'void mexFunction( int nlhs, mxArray *plhs[],\n');
     fprintf(fid,'                  int nrhs, const mxArray *prhs[])\n');
     fprintf(fid,'{\n%s',declareVariables(inputs,outputs,sizes));
-    
+
     % fprintf(fid,'mexPrintf("debug at %d\\n");\n',debugCount);debugCount=debugCount+1;
 
     fprintf(fid,'\n   /* Process inputs */\n\n');
@@ -1976,7 +1976,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
 
         if 0
            fprintf('   input %s, type %s\n',inputs(i).name,inputs(i).type);
-        end 
+        end
         fprintf(fid,'   /* input %s */\n',inputs(i).name);
         fprintf(fid,'   if (mxGetNumberOfDimensions(prhs[%d])!=%d)\n',...
                 i-1,length(inputs(i).msizes));
@@ -2004,7 +2004,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         % check its full
         fprintf(fid,'   if (mxIsSparse(prhs[%d]))\n',i-1);
         fprintf(fid,'       mexErrMsgIdAndTxt("%s:prhs","input %d (%s) cannot be sparse (use full())");\n',...
-                cmexname,i,inputs(i).name);        
+                cmexname,i,inputs(i).name);
         % check type
         fprintf(fid,'   if (!%s(prhs[%d]))\n',matlab2CtypeTest(inputs(i).type),i-1);
         fprintf(fid,'       mexErrMsgIdAndTxt("%s:prhs","input %d (%s) should have type %s");\n',...
@@ -2017,7 +2017,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             fprintf(fid,'   %s=mxGetData(prhs[%d]);\n',inputs(i).name,i-1);
         end
     end
-    
+
     % fprintf(fid,'mexPrintf("debug at %d\\n");\n',debugCount);debugCount=debugCount+1;
 
     fprintf(fid,'\n   /* Process outputs */\n\n');
@@ -2051,14 +2051,14 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             fprintf(fid,'   %s=plhs+%d;\n',outputs(i).name,i-1);
         end
     end
-    
+
     %% Write code to call the C function
 
     for f=fids
         fprintf(f,'\n   /* Call function */\n');
         fprintf(f,'%s',callCfunction);
     end
-    
+
     % close gateway function
     fprintf(fid,'}\n');
     fclose(fid);
@@ -2066,10 +2066,10 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
     % close S-function
     if ~isempty(sfid)
         if dummySimulinkIOs
-            fprintf(sfid,'   *dummyOut = *dummyIn;\n\n');        
+            fprintf(sfid,'   *dummyOut = *dummyIn;\n\n');
         end
         fprintf(sfid,'} // mdlOutputs()\n\n');
-        
+
         fprintf(sfid,'#ifdef MATLAB_MEX_FILE    /* Is this file being compiled as a MEX-file? */\n');
         fprintf(sfid,'#include "simulink.c"     /* MEX-file interface mechanism */\n');
         fprintf(sfid,'#else\n');
@@ -2115,13 +2115,13 @@ end
 function str=declareArguments4Cfunction(inputs,outputs,sizes)
 % Returns string with the typed-arguments for the Cfunction,
 % constructed from the inputs & outputs
-    
+
     str=declareVariables(inputs,outputs,sizes);
     % ';' -> ','
     str=regexprep(str,';',',');
     % remove trailing ','
     str=regexprep(str,',\n$','');
-    
+
 end
 
 function str=callArguments4Cfunction(inputs,outputs,sizes)
@@ -2156,7 +2156,7 @@ function [wholeline,linenum]=getLine(fcmext,linenum)
 end
 
 function [wholeline,openComment]=cleanupLine(wholeline,openComment)
-    
+
     %fprintf('  "%s"',wholeline);
 
     if openComment
@@ -2170,16 +2170,16 @@ function [wholeline,openComment]=cleanupLine(wholeline,openComment)
     else
         % remove /* ... */ comment
         wholeline=regexprep(wholeline,'/\*.+\*/','');
-        
+
         % remove leading white spaces
         wholeline=regexprep(wholeline,'^\s*','');
-        
+
         % remove trailing % or // comment
         wholeline=regexprep(wholeline,'(%|//).*$','');
-        
+
         % remove trailing white spaces
         wholeline=regexprep(wholeline,'\s*$','');
-        
+
         % start of comment
         if ~isempty(regexp(wholeline,'/\*'))
             wholeline=regexprep(wholeline,'/\*.*','');
@@ -2205,9 +2205,9 @@ function [obj,nextline,linenum]=readVariables(fcmext,linenum,obj)
 end
 
 function [preprocess,nextline,linenum]=readPreprocess(fcmext,linenum,args);
-    
+
     preprocess=sprintf('(%s)\n',args);
-    
+
     openComment=false;
     while 1
         linenum=linenum+1;
@@ -2223,7 +2223,7 @@ function [preprocess,nextline,linenum]=readPreprocess(fcmext,linenum,args);
             preprocess=[preprocess,sprintf('%s\n',nextline)];
         end
     end
-    
+
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2246,7 +2246,7 @@ end
 
 %% Returns the name of the C mx function that tests for a desired matlab
 function str=matlab2CtypeTest(str)
-    
+
     switch (str)
       case 'char'
         str='mxIsChar';
@@ -2277,7 +2277,7 @@ end
 
 %% Convert a matlab type to a mex class id
 function str=matlab2classid(str)
-    
+
     switch (str)
       case 'uint8'
         str='mxUINT8_CLASS';
@@ -2306,7 +2306,7 @@ end
 
 %% Convert a matlab type to an S-function data type ID
 function str=matlab2sstype(str)
-    
+
     switch (str)
       case 'uint8'
         str='SS_UINT8';
@@ -2344,7 +2344,7 @@ function includeFile(fid,filename,commentFormat)
     if nargin<3
         commentFormat='/* %s */';
     end
-    
+
     fii=fopen(filename,'r');
     if fii<0
         error('unable to open file ''%s''\n',filename);
@@ -2358,5 +2358,5 @@ function includeFile(fid,filename,commentFormat)
         fprintf(fid,[commentFormat,'\n'],sprintf('END OF #included "%s"',filename));
     end
     fclose(fii);
-    
+
 end

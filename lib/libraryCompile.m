@@ -25,7 +25,7 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
 %                     which will be added automatically based on
 %                     the computer OS)
 %  verboseLevel - when nonzero, debuging information may be included.
-%  
+%
 % Outputs:
 %  cmd - command used to compile the library
 %  statistics - statistics about the size of the files and compile time
@@ -48,24 +48,24 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
 % along with TensCalc.  If not, see <http://www.gnu.org/licenses/>.
 
     mroot=strrep(matlabroot(),'\','/');
-    
+
     include_paths={...
         fsfullfile(mroot,'include');
         fsfullfile(mroot,'extern','include') };
-    
+
     library_paths={...
-        fsfullfile(mroot,'bin',lower(computer()))};    
-    
+        fsfullfile(mroot,'bin',lower(computer()))};
+
     libraries={'mx';'mex';'mat';'stdc++'};
     libraries_pcwin64={'mx';'mex';'mat'};
-    
+
     if ispc
         % /O2 gives "fatal error C1002: compiler is out of heap space in pass 2"
         compilerOptimization=strrep(compilerOptimization,'-O0','/Od');
         compilerOptimization=strrep(compilerOptimization,'-Ofast','/Ot');
         compilerOptimization=strrep(compilerOptimization,'-O1','/O1');
     end
-    
+
     paths=findSuiteSparse();
     include_paths={include_paths{:},paths.include_paths{:}};
     library_paths={library_paths{:},paths.library_paths{:}};
@@ -75,7 +75,7 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
     library_paths_pcwin64={library_paths{:},...
                         fsfullfile(mroot,'bin','win64'),...
                         fsfullfile(mroot,'extern/lib/win64/microsoft')};
-    
+
     templates.maci64=['clang',...
                       concat(' -I"%s"',include_paths),...
                       concat(' -L"%s"',library_paths),...
@@ -86,7 +86,7 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
                       ' %s "',CfunctionsSource,'"',...
                       concat(' -l"%s"',libraries),...
                       ' -o "',dynamicLibrary,'.dylib"'];
-    
+
     templates.glnxa64=['clang',...
                        concat(' -I"%s"',include_paths),...
                        concat(' -L"%s"',library_paths),...
@@ -97,7 +97,7 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
                        ' %s "',CfunctionsSource,'"',...
                        concat(' -l"%s"',libraries),...
                        ' -o "',dynamicLibrary,'.so"'];
-    
+
     templates.pcwin64=['cl.exe',...
                        ' /D_USRDLL /D_WINDLL',...
                        concat(' -I"%s"',include_paths),...
@@ -108,10 +108,10 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
                        concat(' /LIBPATH:"%s"',library_paths_pcwin64),...
                        concat(' lib%s.lib',libraries_pcwin64),...
                        ' /DLL /OUT:"',dynamicLibrary,'.dll"'];
-   
+
    cmd='';
    script{1}=sprintf('switch lower(computer)');
-   
+
    cases=fieldnames(templates);
    for i=1:length(cases)
         script{end+1}=sprintf('  case ''%s''',lower(cases{i}));
@@ -126,7 +126,7 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
     script{end+1}='  otherwise';
     script{end+1}='    error(''unsupported computer "%s"\n'',computer);';
     script{end+1}='end';
-   
+
     switch lower(computer)
       case 'maci64'
         libraryExtension='dylib';
@@ -140,32 +140,32 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
       otherwise
         error('unsupported computer ''%s''\n',computer);
     end
-    
+
     if nargout>1
         return
     end
-    
+
     cfile=dir(sprintf('%s',CfunctionsSource));
     statistics.cFileSize=cfile.bytes;
-    
+
     if verboseLevel>1
         fprintf('  Compiling dynamic library %s.c:\n',dynamicLibrary);
         fprintf('  %s\n',cmd);
     end
-    
+
     fprintf(' optimization = %s... ',compilerOptimization);
     t2=clock;
     rc=system_path(cmd);
     if rc
         error('Compilation error %d for dynamic library %s.c\n',rc,dynamicLibrary);
     end
-    
+
     dfile=dir(sprintf('%s.%s',dynamicLibrary,libraryExtension));
     statistics.dFileSize=dfile.bytes;
     fprintf('%s = %.3fkB, %s.%s = %.3fkB  (%.3f sec)\n',...
             CfunctionsSource,cfile.bytes/1024,...
             dynamicLibrary,libraryExtension,dfile.bytes/1024,etime(clock,t2));
-    
+
     statistics.dCompileTime=etime(clock,t2);
     cmd=statistics;
     if verboseLevel>1
@@ -174,7 +174,7 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
 end
 
 function str=concat(format,cell)
-    
+
     if isempty(cell)
         str='';
     else

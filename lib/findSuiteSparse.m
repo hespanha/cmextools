@@ -17,18 +17,17 @@ function out=findSuiteSparse();
 % along with TensCalc.  If not, see <http://www.gnu.org/licenses/>.
 
     out=struct('include_paths',{{}},'library_paths',{{}},'libraries',{{}});
-    
+
     paths=which('umfpack');
     %paths='/Users/hespanha/GitHub/tenscalc/TimDavis/SuiteSparse/UMFPACK/MATLAB/umfpack.m';
     if ~isempty(paths)
         [paths,name,ext]=fileparts(paths);
-        
+
         out.include_paths={out.include_paths{:},...
                            fsfullfile(paths,'../../include')};
             out.library_paths={out.library_paths{:},...
                             fsfullfile(paths,'../../lib')};
-        out.libraries={out.libraries{:},'umfpack'};        
+        out.libraries={out.libraries{:},'umfpack'};
     end
-    
-end
 
+end

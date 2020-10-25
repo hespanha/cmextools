@@ -1,4 +1,4 @@
-function createGateway(cmexname,standalone)
+function createGateway_old(cmexname,standalone)
 % createGateway(cmexname)
 %
 % Creates a gateway cmex function based on a template in the given cmexname.
@@ -19,7 +19,7 @@ function createGateway(cmexname,standalone)
 %
 % The initial #ifdef anbd final #endif are optional. When present,
 % only the portion of the file between these commands is processed,
-% otherwise the whole file is processed. 
+% otherwise the whole file is processed.
 %
 % Copyright (C) 2013-16  Joao Hespanha
 
@@ -33,7 +33,7 @@ function createGateway(cmexname,standalone)
 %    copyright notice, this list of conditions and the following
 %    disclaimer in the documentation and/or other materials provided
 %    with the distribution.
-% 
+%
 %    * Neither the name of the <ORGANIZATION> nor the names of its
 %    contributors may be used to endorse or promote products derived
 %    from this software without specific prior written permission.
@@ -52,7 +52,7 @@ function createGateway(cmexname,standalone)
 % POSSIBILITY OF SUCH DAMAGE.
 
     fcmext=fopen(cmexname);
-    
+
     if nargin<2
         standalone=0;
     end
@@ -69,7 +69,7 @@ function createGateway(cmexname,standalone)
             end
             break
         end
-        
+
         if ~strcmp(s1,'#ifdef') || ~strcmp(s2,'createGateway')
             start=0;
             if isempty(gatewayName) && ~strcmp(s1,'function')
@@ -77,7 +77,7 @@ function createGateway(cmexname,standalone)
                       linenum,s1);
             end
         end
-        
+
         switch s1
           case '#ifdef'
             if strcmp(s2,'createGateway')
@@ -88,7 +88,7 @@ function createGateway(cmexname,standalone)
             else
                 error('createGateway: ''unexpected ''#ifdef'' in line %d\n',linenum);
             end
-            
+
           case '#endif'
             if partial
                printGateway(gatewayName,inputs,outputs,sizes,standalone);
@@ -96,7 +96,7 @@ function createGateway(cmexname,standalone)
             end
             error('createGateway: ''#endif'' without ''#ifdef creategateway'' in line %d\n',...
                   linenum);
-            
+
           case 'function'
             if ~isempty(gatewayName)
                 printGateway(gatewayName,inputs,outputs,sizes,standalone);
@@ -105,7 +105,7 @@ function createGateway(cmexname,standalone)
             if isempty(s2)
                 error('createGateway: empty function name\n');
             end
-            
+
             gatewayName=s2;
             inputs={};
             outputs={};
@@ -114,11 +114,11 @@ function createGateway(cmexname,standalone)
 
           case 'inputs'
             where='inputs';
-            
+
           case 'outputs'
             where='outputs';
-        
-          otherwise 
+
+          otherwise
             if isempty(s2) || isempty(s3)
                 error('createGateway: unexpected command in line %d (%s)\n',linenum,wholeline);
             end
@@ -131,8 +131,8 @@ function createGateway(cmexname,standalone)
                 outputs{end}.name=s2;
                 outputs{end}.sizes=s3;
             end
-        end            
-        
+        end
+
     end
     fclose(fcmext);
 end
@@ -140,14 +140,14 @@ end
 function printGateway(cmexname,inputs,outputs,sizes,standalone)
 
     debugCount=0;
-    
+
     if 0
        fprintf('creating function %s\n',cmexname);
     end
     fid=fopen(sprintf('%s.c',cmexname),'w');
 
     fprintf(fid,'/* mex -largeArrayDims COPTIMFLAGS="-Ofast -DNDEBUG" CFLAGS="\\$CFLAGS -Wall" %s.c */\n\n',cmexname);
-    
+
     fprintf(fid,'#include "mex.h"\n#include "math.h"\n');
     fprintf(fid,'#include <string.h>\n#include <stdint.h>\n#include <stdlib.h>\n#include <fcntl.h>\n#include <unistd.h>\n#include <pthread.h>\n\n');
 
@@ -162,7 +162,7 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
             end
         end
     end
-    
+
     % declare function that does work
     fprintf(fid,'extern void %s_raw(\n',cmexname);
     if length(inputs)>0
@@ -188,7 +188,7 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
         comma=',';
     end
     fprintf(fid,');\n\n');
-        
+
     % gateway header
     fprintf(fid,'void mexFunction( int nlhs, mxArray *plhs[],\n');
     fprintf(fid,'                  int nrhs, const mxArray *prhs[])\n');
@@ -209,7 +209,7 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
     for i=1:length(sizes)
         fprintf(fid,'   mwSize %s;\n',sizes{i});
     end
-    
+
     % fprintf(fid,'mexPrintf("debug at %d\\n");\n',debugCount);debugCount=debugCount+1;
 
     fprintf(fid,'\n   /* Process inputs */\n\n');
@@ -227,7 +227,7 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
 
         if 0
            fprintf('   input %s, type %s\n',inputs{i}.name,inputs{i}.type);
-        end 
+        end
         fprintf(fid,'   /* input %s */\n',inputs{i}.name);
         % padd sizes to 2
         while length(inputs{i}.sizes)<2
@@ -269,7 +269,7 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
         % get pointer
         fprintf(fid,'   %s=mxGetData(prhs[%d]);\n',inputs{i}.name,i-1);
     end
-    
+
     % fprintf(fid,'mexPrintf("debug at %d\\n");\n',debugCount);debugCount=debugCount+1;
 
     fprintf(fid,'\n   /* Process outputs */\n\n');
@@ -285,7 +285,7 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
         if 0
             fprintf('   output %s, type %s\n',outputs{i}.name,outputs{i}.type);
         end
-        
+
         fprintf(fid,'   /* output %s */\n',outputs{i}.name);
         % padd sizes to 2
         while length(outputs{i}.sizes)<2
@@ -298,7 +298,7 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
                 i-1,length(outputs{i}.sizes),matlab2classid(outputs{i}.type));
         fprintf(fid,'     %s=mxGetData(plhs[%d]); }\n',outputs{i}.name,i-1);
     end
-    
+
 
     if standalone==0
         % call function that does work
@@ -318,10 +318,10 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
             comma=', ';
         end
         fprintf(fid,');\n');
-        
+
         % close gateway function
         fprintf(fid,'}\n');
-        
+
         fprintf(fid,'\n#include "%s_raw.c"\n',cmexname);
     else
         % save data to file
@@ -357,14 +357,14 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
         for i=1:length(sizes)
             fprintf(fid,'      write(fid,&%s,sizeof(%s));\n',sizes{i},sizes{i});
         end
-        
+
         fprintf(fid,'   close(fid); }\n');
 
         % close gateway function
         fprintf(fid,'}\n');
-        
+
         fprintf(fid,'\n#include "%s_raw.c"\n',cmexname);
-    
+
         % create standalone main()
         fmid=fopen(sprintf('%s_salone.c',cmexname),'w');
 
@@ -372,7 +372,7 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
         fprintf(fmid,'#include <string.h>\n#include <stdint.h>\n#include <fcntl.h>\n#include <unistd.h>\n#include <pthread.h>\n\n');
         %fprintf(fmid,'int mexPrintf(const char *fmt,...) { return 0; };\n\n');
         fprintf(fmid,'#define mexPrintf(...) fprintf (stderr, __VA_ARGS__)\n');
-        
+
         % declare function that does work
         fprintf(fmid,'extern void %s_raw(\n',cmexname);
         if length(inputs)>0
@@ -398,7 +398,7 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
             comma=',';
         end
         fprintf(fmid,');\n\n');
-        
+
         fprintf(fmid,'int main() { \n');
         % declare variables
         fprintf(fmid,'   /* inputs */\n');
@@ -442,7 +442,7 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
             %fprintf(fmid,'   fprintf(stderr,"%s=%%lu\\n",%s);\n',sizes{i},sizes{i});
         end
         fprintf(fmid,'}\n');
-        
+
         % call function that does work
         fprintf(fmid,'\n   /* Call function */\n');
         fprintf(fmid,'   %s_raw(',cmexname);
@@ -460,20 +460,20 @@ function printGateway(cmexname,inputs,outputs,sizes,standalone)
             comma=', ';
         end
         fprintf(fmid,');\n');
-        
+
         % close main function
         fprintf(fmid,'}\n');
-        
+
         fprintf(fmid,'\n#include "%s_raw.c"\n',cmexname);
 
         fclose(fmid);
     end
-    
+
     fclose(fid);
 end
 
 function [s1,s2,s3,wholeline,linenum]=getLine(fcmext,linenum)
-    
+
     while 1
         linenum=linenum+1;
         wholeline=fgets(fcmext);
@@ -499,7 +499,7 @@ function [s1,s2,s3,wholeline,linenum]=getLine(fcmext,linenum)
         s3=textscan(s3,'%s','Delimiter',',');
         s3=s3{1};
     end
-    
+
     if 0
        fprintf('|"%s" "%s" [',s1,s2);
        fprintf('"%s",',s3{:});
@@ -508,7 +508,7 @@ function [s1,s2,s3,wholeline,linenum]=getLine(fcmext,linenum)
 end
 
 function str=matlab2Ctype(str)
-    
+
       switch (str)
         case {'uint8','uint16','uint32','uint64','int8','int16','int32','int64'}
           str=sprintf('%s_t',str);
@@ -519,7 +519,7 @@ function str=matlab2Ctype(str)
 end
 
 function str=matlab2CtypeTest(str)
-    
+
     switch (str)
       case 'uint8'
         str='mxIsUint8';
@@ -547,7 +547,7 @@ function str=matlab2CtypeTest(str)
 end
 
 function str=matlab2classid(str)
-    
+
     switch (str)
       case 'uint8'
         str='mxUINT8_CLASS';

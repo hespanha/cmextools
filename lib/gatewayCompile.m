@@ -19,12 +19,12 @@ function [cmd,script]=gatewayCompile(compilerOptimization,mexfolder,mexname,verb
 %              full path but NOT the extension). The cmex function
 %              will have this same name.
 %  verboseLevel - when nonzero, debuging information may be included.
-%  
+%
 % Outputs:
 %  cmd = command to compile the gateway function in the current
 %        computer
 %  script = cell array with computer-independent script to compile
-%           the gateway function. 
+%           the gateway function.
 %
 % Copyright 2012-2017 Joao Hespanha
 
@@ -51,7 +51,7 @@ function [cmd,script]=gatewayCompile(compilerOptimization,mexfolder,mexname,verb
     libraries=paths.libraries;
 
     libraries_glnxa64={libraries{:},'dl'};
-    
+
     templates.maci64=['mex -largeArrayDims',...
                       concat(' -I"%s"',include_paths),...
                       concat(' -L"%s"',library_paths),...
@@ -60,7 +60,7 @@ function [cmd,script]=gatewayCompile(compilerOptimization,mexfolder,mexname,verb
                       ' "',mexname,'.c"',...
                       concat(' -l"%s"',libraries),...
                       ' -outdir ',mexfolder];
-                      
+
     templates.glnxa64=['mex -largeArrayDims',...
                       concat(' -I"%s"',include_paths),...
                       concat(' -L"%s"',library_paths),...
@@ -69,12 +69,12 @@ function [cmd,script]=gatewayCompile(compilerOptimization,mexfolder,mexname,verb
                       ' "',mexname,'.c"',...
                       concat(' -l"%s"',libraries_glnxa64),...
                       ' -outdir ',mexfolder];
-                     
+
     templates.pcwin64=templates.maci64;
-        
+
     cmd='';
     script{1}=sprintf('switch lower(computer)');
-    
+
     cases=fieldnames(templates);
     for i=1:length(cases)
         script{end+1}=sprintf('  case ''%s''',lower(cases{i}));
@@ -87,16 +87,16 @@ function [cmd,script]=gatewayCompile(compilerOptimization,mexfolder,mexname,verb
     script{end+1}='  otherwise';
     script{end+1}='    error(''unsupported computer "%s"\n'',computer);';
     script{end+1}='end';
-    
+
     if isempty(cmd)
         cases
         error('unsupported computer "%s"\n',computer);
     end
-                
+
     if nargout>0
         return
     end
-    
+
     if verboseLevel>1
         fprintf('Compiling %s.c...\n',mexname);
         fprintf('  %s\n',cmd);
@@ -109,7 +109,7 @@ function [cmd,script]=gatewayCompile(compilerOptimization,mexfolder,mexname,verb
 end
 
 function str=concat(format,cell)
-    
+
     if isempty(cell)
         str='';
     else

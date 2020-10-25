@@ -9,18 +9,18 @@ function varargout=fevalinC(Cfilename,varargin)
 % Typically, the C-filename will be of the form
 %
 % #ifdef __MATLAB__
-% 
+%
 % function [y1,y2,...]=f(x1,x2,...)
 %
 % {matlab code}
 %
 % end
-% 
+%
 % #else
 %
 % {C code goes here}
 %
-% #endif 
+% #endif
 %
 % Copyright 2012-2017 Joao Hespanha
 
@@ -55,5 +55,3 @@ else
 end
 
 !rm -f tmp_fevalinC_toremove.m
-
-

@@ -24,18 +24,18 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
 %
 % You should have received a copy of the GNU General Public License
 % along with TensCalc.  If not, see <http://www.gnu.org/licenses/>.
-    
+
     mroot=strrep(matlabroot(),'\','/');
 
     include_paths={...
         fsfullfile(mroot,'include');
         fsfullfile(mroot,'extern','include') };
-    
+
     library_paths={...
-        fsfullfile(mroot,'bin',lower(computer()))};    
-    
+        fsfullfile(mroot,'bin',lower(computer()))};
+
     libraries={'stdc++'};
-    
+
     paths=findSuiteSparse();
     include_paths={include_paths{:},paths.include_paths{:}};
     library_paths={library_paths{:},paths.library_paths{:}};
@@ -45,7 +45,7 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
                         {fsfullfile(mroot,'bin','win64');...
                         fsfullfile(mroot,'extern/lib/bin/win64/microsoft');};
                    ];
-   
+
     templates.maci64=['clang',...
                       concat(' -I"%s"',include_paths),...
                       concat(' -L"%s"',library_paths),...
@@ -54,7 +54,7 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
                       ' %s "',standalone,'"',...
                       concat(' -l"%s"',libraries),...
                       ' -o ',standalone];
-    
+
     templates.glnxa64=['clang',...
                        concat(' -I"%s"',include_paths),...
                        concat(' -L"%s"',library_paths),...
@@ -63,7 +63,7 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
                        ' %s "',standalone,'"',...
                       concat(' -l"%s"',libraries),...
                       ' -o ',standalone];
-    
+
     templates.pcwin64=['cl.exe',...
                        concat(' -I"%s"',include_paths),...
                        concat(' /LIBPATH:"%s"',library_paths_pcwin64),...
@@ -72,11 +72,11 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
                        ' %s "',standalone,'"',...
                        concat(' lib%s.lib',libraries),...
                        ' /OUT:',standalone,'.exe'];
-   
+
 
    cmd='';
    script{1}=sprintf('switch lower(computer)');
-   
+
    cases=fieldnames(templates);
    for i=1:length(cases)
         script{end+1}=sprintf('  case ''%s''',lower(cases{i}));
@@ -91,12 +91,12 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
     script{end+1}='  otherwise';
     script{end+1}='    error(''unsupported computer "%s"\n'',computer);';
     script{end+1}='end';
-   
+
 
     if nargout>0
         return
     end
-    
+
     if verboseLevel>1
         fprintf('Compiling %s.c...\n',standalone);
         fprintf('  %s\n',cmd);
@@ -119,7 +119,7 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
 end
 
 function str=concat(format,cell)
-    
+
     if isempty(cell)
         str='';
     else
