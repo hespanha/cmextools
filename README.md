@@ -349,19 +349,9 @@ University of California, Santa Barbara
 	
 ## License Information
 
-Copyright 2010-2017 Joao Hespanha
-
 This file is part of Tencalc.
 
-TensCalc is free software: you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation, either version 3 of the License, or (at your
-option) any later version.
+Copyright (C) 2010-21 The Regents of the University of California
+(author: Dr. Joao Hespanha).  All rights reserved.
 
-TensCalc is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with TensCalc.  If not, see <http://www.gnu.org/licenses/>.
+See LICENSE.txt

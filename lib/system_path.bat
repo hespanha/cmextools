@@ -1,3 +1,8 @@
+REM This file is part of Tencalc.
+REM
+REM Copyright (C) 2012-21 The Regents of the University of California
+REM (author: Dr. Joao Hespanha).  All rights reserved.
+
 @echo off
 REM FIX PATH
 REM path

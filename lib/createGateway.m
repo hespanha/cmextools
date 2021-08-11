@@ -1,22 +1,10 @@
 function varargout=createGateway(varargin)
 % To get help, type createGateway('help')
 %
-% Copyright 2012-2019 Joao Hespanha
-
 % This file is part of Tencalc.
 %
-% TensCalc is free software: you can redistribute it and/or modify it
-% under the terms of the GNU General Public License as published by the
-% Free Software Foundation, either version 3 of the License, or (at your
-% option) any later version.
-%
-% TensCalc is distributed in the hope that it will be useful, but
-% WITHOUT ANY WARRANTY; without even the implied warranty of
-% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-% General Public License for more details.
-%
-% You should have received a copy of the GNU General Public License
-% along with TensCalc.  If not, see <http://www.gnu.org/licenses/>.
+% Copyright (C) 2012-21 The Regents of the University of California
+% (author: Dr. Joao Hespanha).  All rights reserved.
 
 declareParameter(...
     'Help', {
@@ -676,7 +664,7 @@ else
     for i=1:length(classHelp)
         fprintf(fic,'%% %s\n',classHelp{i});
     end
-    includeFile(fic,'GPL.m','');
+    includeFile(fic,'COPYRIGHT.m','');
     if ismember(callType,{'dynamicLibrary'})
         fprintf(fic,'%% %% Unload dynamic library\n%% load(obj,0)\n');
         fprintf(fic,'%% %% Load dynamic library\n%% load(obj,1)\n');
@@ -813,7 +801,7 @@ if ismember(callType,{'dynamicLibrary'}) && compileLibrary
         error('createGateway: Unable to create header file ''%s''\n',hfilename);
     end
     fprintf(fih,'/* Created by script createGateway.m on %s */\n\n',datestr(now));
-    includeFile(fih,'GPL.c');
+    includeFile(fih,'COPYRIGHT.c');
     [cmd,script]=libraryCompile(compilerOptimization,...
                                 CfunctionsSource,dynamicLibraryWithPath,verboseLevel);
     fprintf(fih,'/* %s */\n\n',cmd);
@@ -1140,7 +1128,7 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
             error('createGateway: Unable to create C file ''%s''\n',cfilename);
         end
         fprintf(fmid,'/* Created by script createGateway.m on %s */\n\n',datestr(now));
-        includeFile(fmid,'GPL.c');
+        includeFile(fmid,'COPYRIGHT.c');
         cmd=standaloneCompile(serverComputer,compilerOptimization,...
                               fsfullfile(folder,serverProgramName),verboseLevel);
         fprintf(fmid,'/* %s */\n\n',cmd);
@@ -1309,7 +1297,7 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
                 error('createGateway: Unable to create C file ''%s''\n',cfilename);
             end
             fprintf(fmid,'/* Created by script createGateway.m on %s */\n\n',datestr(now));
-            includeFile(fmid,'GPL.c');
+            includeFile(fmid,'COPYRIGHT.c');
             cmd=standaloneCompile(targetComputer,compilerOptimization,...
                                   sprintf('%s_salone',...
                                           fsfullfile(folder,template(i).MEXfunction)),...
@@ -1748,7 +1736,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
 
     for f=fids
         fprintf(f,'/* Created by script createGateway.m on %s */\n\n',datestr(now));
-        includeFile(f,'GPL.c');
+        includeFile(f,'COPYRIGHT.c');
     end
     [cmd,scripts]=gatewayCompile(compilerOptimization,classFolder,...
                                  fsfullfile(classFolder,cmexname),verboseLevel);
