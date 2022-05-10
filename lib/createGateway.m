@@ -1522,7 +1522,7 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
         fclose(fmid);
     end
 
-    if strcmp(callType,'dynamicLibrary') && ~callLibrary
+    if strcmp(callType,'dynamicLibrary') && callLibrary
         template(end+1).MEXfunction=sprintf('%s_load',dynamicLibrary);
         template(end).Sfunction='';
         template(end).method='load';
