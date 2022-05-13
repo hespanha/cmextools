@@ -134,6 +134,9 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
     end
 
     cfile=dir(sprintf('%s',CfunctionsSource));
+    if isempty(cfile)
+        error('Cfunctions source file "%s" not found\n',CfunctionsSource)
+    end
     statistics.cFileSize=cfile.bytes;
 
     if verboseLevel>1
