@@ -25,8 +25,8 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
     libraries={'stdc++'};
 
     paths=findSuiteSparse();
-    include_paths={include_paths{:},paths.include_paths{:}};
-    library_paths={library_paths{:},paths.library_paths{:}};
+    include_paths={include_paths{:},paths.include_paths{:}}';
+    library_paths={library_paths{:},paths.library_paths{:}}';
     libraries={libraries{:},paths.libraries{:}};
 
     library_paths_pcwin64=[library_paths;
@@ -39,7 +39,7 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
                       concat(' -L"%s"',library_paths),...
                       ' -Wall -Werror -Wno-unused-variable -Wno-unused-result -std=gnu99 ',...
                       ...% %s will be replaced by the compilerOptimization
-                      ' %s "',standalone,'"',...
+                      ' %s "',standalone,'.c"',...
                       concat(' -l"%s"',libraries),...
                       ' -o ',standalone];
 
@@ -48,7 +48,7 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
                        concat(' -L"%s"',library_paths),...
                        ' -Wall -Werror -Wno-unused-variable -Wno-unused-result -std=gnu99 ',...
                        ...% %s will be replaced by the compilerOptimization
-                       ' %s "',standalone,'"',...
+                       ' %s "',standalone,'.c"',...
                       concat(' -l"%s"',libraries),...
                       ' -o ',standalone];
 
@@ -57,7 +57,7 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
                        concat(' /LIBPATH:"%s"',library_paths_pcwin64),...
                        ' /LINK ',...
                        ...% %s will be replaced by the compilerOptimization
-                       ' %s "',standalone,'"',...
+                       ' %s "',standalone,'.c"',...
                        concat(' lib%s.lib',libraries),...
                        ' /OUT:',standalone,'.exe'];
 
@@ -68,7 +68,7 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
    cases=fieldnames(templates);
    for i=1:length(cases)
         script{end+1}=sprintf('  case ''%s''',lower(cases{i}));
-        script{end+1}=sprintf('    fprintf(''Compiling dynamic library %s.c (%%s)... '',compilerOptimization);t2=clock;',dynamicLibrary);
+        %script{end+1}=sprintf('    fprintf(''Compiling dynamic library %s.c (%%s)... '',compilerOptimization);t2=clock;',dynamicLibrary);
         script{end+1}=sprintf('    system(sprintf(''%s'',compilerOptimization));',...
                               getfield(templates,cases{i}));
         script{end+1}=sprintf('    fprintf(''done (%%.2f)\\n'',etime(clock(),t2));');
@@ -79,7 +79,6 @@ function [cmd,script]=standaloneCompile(targetComputer,compilerOptimization,stan
     script{end+1}='  otherwise';
     script{end+1}='    error(''unsupported computer "%s"\n'',computer);';
     script{end+1}='end';
-
 
     if nargout>0
         return
