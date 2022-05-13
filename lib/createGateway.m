@@ -231,7 +231,7 @@ declareParameter(...
 declareParameter(...
     'VariableName','callType',...
     'DefaultValue','include',...
-    'AdmissibleValues',{'include','dynamicLibrary',...
+    'AdmissibleValues',{'include','dynamicLibrary','dynamicLibraryWithGateways',...
                     'standalone','client-server'},...
     'Description', {
         'Determines how the gateway function should call the C function that'
@@ -241,7 +241,26 @@ declareParameter(...
         '              that precede the declaration of the gateway function.'
         '              The C function will thus be statically linked to the'
         '              gateway function.'
-        '''dynamicLibrary'' - Each time the gateway function is called, it:'
+        '''dynamicLibrary'' - Calls directly library functions without actually'
+        '              creating gateway functions:'
+        '              (1) The first time a gateway function is called it'
+        '                  loads the dynamic library defined by ''dynamicLibrary''';
+        '                  (this step is not needed in subsequent calls).'
+        '              (2) calls ''Cfunction'' that must exist within the library.'
+        '              (3) does NOT unload the dynamic library'
+        '              A mexFunction'
+        '                 function rc=dynamicLibrary_load(boolean)'
+        '              is automatically created to load or unload the library'
+        '              It should be called (with boolean=false)'
+        '              when the gateways are no longer needed.'
+        '              When the cmex functions are incorporated into a matlab class';
+        '              (see ''className'' parameters), the creating of the matlab';
+        '              object automatically calls dynamicLibrary_load(true);';
+        '              BUT the destruction of the object does not call'
+        '              dynamicLibrary_load(false), which should be done manually.;';
+        '              ATTENTION: the gateway will CRASH matlab if called after'
+        '              the library is unloaded.'
+        '''dynamicLibraryWithGateways'' - Each time the gateway function is called, it:'
         '              (1) The first time a gateway function is called it'
         '                  loads the dynamic library defined by ''dynamicLibrary''';
         '                  (this step is not needed in subsequent calls).'
@@ -445,11 +464,9 @@ if stopNow
     return
 end
 
-callLibrary=ismember(callType,{'dynamicLibrary'});
-
 %verboseLevel=4;
 
-if ismember(callType,{'dynamicLibrary'}) && isempty(dynamicLibrary)
+if ismember(callType,{'dynamicLibrary','dynamicLibraryWithGateways'}) && isempty(dynamicLibrary)
     error('createGateway: ''dynamicLibrary'' cannot be empty for callType=''%s''\n',...
           callType);
 end
@@ -461,7 +478,7 @@ if ismember(callType,{'client-server'}) && isempty(serverProgramName)
           callType);
 end
 
-if ismember(callType,{'dynamicLibrary','client-server'}) && isempty(CfunctionsSource)
+if ismember(callType,{'dynamicLibrary','dynamicLibraryWithGateways','client-server'}) && isempty(CfunctionsSource)
     error('createGateway: ''CfunctionsSource''  cannot be empty for callType=''%s''\n',...
           callType);
 end
@@ -489,7 +506,7 @@ else
 end
 
 %% Compute path for dynamic library
-if ismember(callType,{'dynamicLibrary'})
+if ismember(callType,{'dynamicLibrary','dynamicLibraryWithGateways'})
     if ~isempty(fileparts(dynamicLibrary))
         error('dynamicLibrary (''%s'') should not include a path. Use ''folder'' instead.\n',dynamicLibrary);
     end
@@ -665,28 +682,27 @@ else
         fprintf(fic,'%% %s\n',classHelp{i});
     end
     includeFile(fic,'COPYRIGHT.m','');
-    if ismember(callType,{'dynamicLibrary'})
+    if false %ismember(callType,{'dynamicLibrary'})
         fprintf(fic,'%% %% Unload dynamic library\n%% load(obj,0)\n');
         fprintf(fic,'%% %% Load dynamic library\n%% load(obj,1)\n');
     end
     fprintf(fic,'   methods\n');
     %% create class creation method
     fprintf(fic,'     function obj=%s()\n',className);
-    if ismember(callType,{'dynamicLibrary'})
-        if callLibrary
-            fprintf(fic,'            [notfound,warnings]=loadlibrary(''%s'',''%s.h'');\n',dynamicLibrary_dlopen,dynamicLibrary_dlopen);
-        else
-            fprintf(fic,'       load(obj,1);\n',dynamicLibrary);
-            %fprintf(fic,'       %s_load(1);\n',dynamicLibrary);
-        end
+    if ismember(callType,{'dynamicLibrary','dynamicLibraryWithGateways'})
+        fprintf(fic,'            [notfound,warnings]=loadlibrary(''%s'',''%s.h'');\n',dynamicLibrary_dlopen,dynamicLibrary_dlopen);
+    end
+    if false %ismember(callType,{'dynamicLibrary'})
+        fprintf(fic,'       load(obj,1);\n',dynamicLibrary);
+        %fprintf(fic,'       %s_load(1);\n',dynamicLibrary);
     end
     fprintf(fic,'     end %% %s()\n',className);
     %% create class delete method
-    if ismember(callType,{'dynamicLibrary'})
+    if ismember(callType,{'dynamicLibrary','dynamicLibraryWithGateways'})
         fprintf(fic,'     function delete(obj)\n');
         if 1
             fprintf(fic,'         fprintf(''deleting object, clear mex, unloading library %s;\\n'');\n',dynamicLibrary);
-            if callLibrary
+            if true % ismember(callType,{'dynamicLibraryWithGateways'})
                 fprintf(fic,'         unloadlibrary(''%s'');\n',dynamicLibrary);
             else
                 %fprintf(fic,'       clear mex;%s_load(0);\n',dynamicLibrary);
@@ -723,7 +739,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Add code to be executed to template structure
-template=computeCode(template,callType,callLibrary,dynamicLibrary,dynamicLibrary_dlopen,cmexFolder,...
+template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dlopen,cmexFolder,...
                      CfunctionsSource,targetComputer,compilerOptimization,...
                      serverComputer,serverProgramName,serverAddress,port,MAGIC,...
                      verboseLevel);
@@ -740,37 +756,40 @@ for i=1:length(template)
                  defines,template(i).includes,template(i).code,...
                  template(i).preprocess,preprocessParameters,...
                  template(i).callCfunction,template(i).method,...
-                 cmexFolder,fic,callType,callLibrary,compilerOptimization,...
+                 cmexFolder,fic,callType,compilerOptimization,...
                  dynamicLibrary,template(end),...
                  dummySimulinkIOs,...
                  verboseLevel);
 end
+
 if verboseLevel>0
-    fprintf('done writeGateway (%.2f sec) ',etime(clock,t1));
+    fprintf('done writeGateway (%.2f sec)\n',etime(clock,t1));
 end
-
-%% Compile gateways
-if compileGateways
-    fprintf('  Compiling %d MEX gateways... ',length(template));
-    t1=clock;
-    for i=1:length(template)
-        gatewayCompile(compilerOptimization,cmexFolder,...
-                       fsfullfile(cmexFolder,template(i).MEXfunction),verboseLevel);
-    end
-    fprintf('done compiling %d MEX gateways (%.2f sec)\n',length(template),etime(clock,t1));
-
-    % Simulink
-    fprintf('  Compiling %d S-function gateways... ',length(template));
-    t1=clock;
-    for i=1:length(template)
-        if ~isempty(template(i).Sfunction)
+    
+if ismember(callType,{'include','dynamicLibraryWithGateways',...
+                      'standalone','client-server'})
+    %% Compile gateways
+    if compileGateways
+        fprintf('  Compiling %d MEX gateways... ',length(template));
+        t1=clock;
+        for i=1:length(template)
             gatewayCompile(compilerOptimization,cmexFolder,...
-                           fsfullfile(cmexFolder,template(i).Sfunction),verboseLevel);
+                           fsfullfile(cmexFolder,template(i).MEXfunction),verboseLevel);
         end
+        fprintf('done compiling %d MEX gateways (%.2f sec)\n',length(template),etime(clock,t1));
+        
+        % Simulink
+        fprintf('  Compiling %d S-function gateways... ',length(template));
+        t1=clock;
+        for i=1:length(template)
+            if ~isempty(template(i).Sfunction)
+                gatewayCompile(compilerOptimization,cmexFolder,...
+                               fsfullfile(cmexFolder,template(i).Sfunction),verboseLevel);
+            end
+        end
+        fprintf('done compiling %d S-function gateways (%.2f sec)\n',length(template),etime(clock,t1));
     end
-    fprintf('done compiling %d S-function gateways (%.2f sec)\n',length(template),etime(clock,t1));
 end
-
 
 %% Compile standalones/server
 if compileStandalones
@@ -793,7 +812,7 @@ end
 
 statistics=struct();
 %% Create dynamic library
-if ismember(callType,{'dynamicLibrary'}) && compileLibrary
+if ismember(callType,{'dynamicLibrary','dynamicLibraryWithGateways'}) && compileLibrary
     %% Create header for eventually loadlib
     hfilename=sprintf('%s.h',dynamicLibraryWithPath);
     fih=fopen(hfilename,'w');
@@ -954,7 +973,7 @@ if ~isempty(simulinkLibrary)
 end
 
 %% load library
-if ismember(callType,{'dynamicLibrary'})
+if ismember(callType,{'dynamicLibraryWithGateways'})
     loadname=sprintf('%s_load',dynamicLibrary);
     if exist(loadname,'file')
         % unload any previously loaded library
@@ -1116,13 +1135,13 @@ end
 %% Add code to be executed to the template structure
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynamicLibrary_dlopen,folder,...
+function template=computeCode(template,callType,dynamicLibrary,dynamicLibrary_dlopen,folder,...
                               CfunctionsSource,targetComputer,compilerOptimization,...
                               serverComputer,serverProgramName,serverAddress,port,magic,...
                               verboseLevel)
 
     if strcmp(callType,'client-server')
-        cfilename=sprintf('%s.c',serverProgramName);
+        cfilename=sprintf('%s.c',fsfullfile(folder,serverProgramName));
         fmid=fopen(cfilename,'w');
         if fmid<0
             error('createGateway: Unable to create C file ''%s''\n',cfilename);
@@ -1171,7 +1190,7 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
                 callArguments4Cfunction(template(t).inputs,...
                                         template(t).outputs,template(t).sizes));
 
-          case 'dynamicLibrary'
+          case {'dynamicLibrary','dynamicLibraryWithGateways'}
             template(t).callCfunction='';
             if verboseLevel>3
                 template(t).callCfunction=[template(t).callCfunction,sprintf('   printf("call %s (before):\tP%s=%%lx\\n",P%s);\n',template(t).Cfunction,template(t).Cfunction,template(t).Cfunction)];
@@ -1291,7 +1310,7 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
                                 sprintf('   close(fid); }\n')];
 
             %% create standalone main()
-            cfilename=sprintf('%s_salone.c',template(t).MEXfunction);
+            cfilename=fsfullfile(folder,sprintf('%s_salone.c',template(t).MEXfunction));
             fmid=fopen(cfilename,'w');
             if fmid<0
                 error('createGateway: Unable to create C file ''%s''\n',cfilename);
@@ -1522,7 +1541,7 @@ function template=computeCode(template,callType,callLibrary,dynamicLibrary,dynam
         fclose(fmid);
     end
 
-    if strcmp(callType,'dynamicLibrary') && callLibrary
+    if strcmp(callType,'dynamicLibraryWithGateways') 
         template(end+1).MEXfunction=sprintf('%s_load',dynamicLibrary);
         template(end).Sfunction='';
         template(end).method='load';
@@ -1593,7 +1612,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
                       defines,includes,code,...
                       preprocess,preprocessParameters,...
                       callCfunction,method,...
-                      classFolder,fic,callType,callLibrary,compilerOptimization,...
+                      classFolder,fic,callType,compilerOptimization,...
                       dynamicLibrary,templateLoad,...
                       dummySimulinkIOs,...
                       verboseLevel)
@@ -1620,7 +1639,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
                         inputs(i).name,inputs(i).type,mymat2str(inputs(i).default));
                 fprintf(fic,'         end\n');
             end
-            if callLibrary
+            if ismember(callType,{'dynamicLibrary','dynamicLibraryWithGateways'})
                 % check inputs types and size
                 fprintf(fic,'         if ~isa(%s,''%s'')\n',inputs(i).name,inputs(i).type);
                 fprintf(fic,'           error(''%s: input %s should be of type %s and not %%s\\n'',class(%s))\n',...
@@ -1628,18 +1647,18 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
                 fprintf(fic,'         end\n');
                 sz=str2double(inputs(i).msizes);
                 if ~any(isnan(sz))
-                    % method only check sizes if all sizes are numeric
+                    % currently method only check sizes if all sizes are numeric
                     fprintf(fic,'         if ~isequal(size(%s),[%s])\n',inputs(i).name,mymat2str(sz));
                     fprintf(fic,'           error(''%s: input %s should have size [%s] and not %%s\\n'',mat2str(size(%s)))\n',...
                             method,inputs(i).name,mymat2str(sz),inputs(i).name);
                     fprintf(fic,'         end\n');
-                else
-                    error('checking non-numeric sizes not implemented when calling the library directly');
+                elseif ismember(callType,{'dynamicLibrary'})
+                    error('checking non-numeric sizes not implemented when calling the library directly without gateways. Use callType=dynamicLibraryWithGateways.');
                 end
             end
         end
-        if callLibrary
-            % create outputs
+        if ismember(callType,{'dynamicLibrary'})
+            % create outputs (changed by ref)
             for i=1:length(outputs)
                 sz=str2double(outputs(i).msizes);
                 if strcmp(outputs(i).type,'sparse')
@@ -1651,7 +1670,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         end
         fprintf(fic,'         ');
         sep='[';
-        if callLibrary
+        if ismember(callType,{'dynamicLibrary'})
             % call lib assumed inputs may actually be outputs passed by reference
             for i=1:length(inputs)
                 fprintf(fic,'%c~',sep);
@@ -1665,7 +1684,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
         if sep ~= '['
             fprintf(fic,']=');
         end
-        if callLibrary
+        if ismember(callType,{'dynamicLibrary'})
             fprintf(fic,'calllib(''%s'',''%s''',dynamicLibrary,Cfunction);
             sep=',';
         else
@@ -1676,7 +1695,8 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             fprintf(fic,'%c%s',sep,inputs(i).name);
             sep=',';
         end
-        if callLibrary
+        if ismember(callType,{'dynamicLibrary'})
+            % call lib assumed inputs may actually be outputs passed by reference
             for i=1:length(outputs)
                 fprintf(fic,'%c%s',sep,outputs(i).name);
                 sep=',';
@@ -1744,7 +1764,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
 
     for f=fids
         %fprintf(f,'#include <math.>"\n');
-        if ismember(callType,{'dynamicLibrary'})
+        if ismember(callType,{'dynamicLibrary','dynamicLibraryWithGateways'})
             fprintf(f,'#ifdef __linux__\n#include <dlfcn.h>\n#include <unistd.h>\n#endif\n');
             fprintf(f,'#ifdef __APPLE__\n#include <dlfcn.h>\n#include <unistd.h>\n#endif\n');
             fprintf(f,'#ifdef _WIN32\n#include <windows.h>\n#include <stdint.h>\n#endif\n');
@@ -1776,13 +1796,12 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
             end
             fprintf(f,'\n');
         end
-
         switch callType
           case 'include'
             % declare function that does work
             fprintf(f,'extern void %s(\n%s);\n\n',...
                     Cfunction,declareArguments4Cfunction(inputs,outputs,sizes));
-          case 'dynamicLibrary'
+          case {'dynamicLibrary','dynamicLibraryWithGateways'}
             % declare pointer to function that does the work
             fprintf(f,'#ifdef __linux__\nvoid *libHandle=NULL;\n#endif\n');
             fprintf(f,'#ifdef __APPLE__\nvoid *libHandle=NULL;\n#endif\n');
@@ -1901,7 +1920,7 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
 
         % mdlTerminate
         fprintf(sfid,'static void mdlTerminate(SimStruct *S) {\n');
-        if ismember(callType,{'dynamicLibrary'})
+        if ismember(callType,{'dynamicLibrary','dynamicLibraryWithGateways'})
             %    fprintf(sfid,'   { int load[]={0};\n%s\n   }\n',templateLoad.callCfunction);
             fprintf(sfid,'#ifdef __linux__\n');
             fprintf(sfid,'                  while (!dlclose(libHandle)) printf(".");\n');
