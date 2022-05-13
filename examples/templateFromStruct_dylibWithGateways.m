@@ -12,13 +12,13 @@ template(1).Sfunction = '';
 template(1).method = 'tmp_Cplus';
 template(1).inputs(1).type   = 'double';
 template(1).inputs(1).name   = 'X1';
-template(1).inputs(1).sizes  = [3,4];
+template(1).inputs(1).sizes  = {'m','n'};
 template(1).inputs(2).type   = 'double';
 template(1).inputs(2).name   = 'X2';
-template(1).inputs(2).sizes  = [3,4];
+template(1).inputs(2).sizes  = {'m','n'};
 template(1).outputs(1).type  = 'double';
 template(1).outputs(1).name  = 'Y';
-template(1).outputs(1).sizes = [3,4];
+template(1).outputs(1).sizes = {'m','n'};
 
 template(2).MEXfunction  = 'tmp_Ctimes';
 template(2).Cfunction = 'mtimes';
@@ -26,22 +26,22 @@ template(2).Sfunction = '';
 template(2).method = 'tmp_Ctimes';
 template(2).inputs(1).type   = 'double';
 template(2).inputs(1).name   = 'X1';
-template(2).inputs(1).sizes  = [3,2];
+template(2).inputs(1).sizes  = {'m','k'};
 template(2).inputs(2).type   = 'double';
 template(2).inputs(2).name   = 'X2';
-template(2).inputs(2).sizes  = [2,4];
+template(2).inputs(2).sizes  = {'k','n'};
 template(2).outputs(1).type  = 'double';
 template(2).outputs(1).name  = 'Y';
-template(2).outputs(1).sizes = [3,4];
+template(2).outputs(1).sizes = {'m','n'};
 
-classname='tmp_timesplus2';
+classname='tmp_timesplus';
 createGateway('template',template,...
-              'callType','dynamicLibrary','dynamicLibrary',classname,...
-              'CfunctionsSource','times-plus-fixed-dylib.c',...
+              'callType','dynamicLibraryWithGateways','dynamicLibrary',classname,...
+              'CfunctionsSource','times-plus-dylib.c',...
               'className',classname,...
               'verboseLevel',1);
 
-obj=tmp_timesplus2();
+obj=tmp_timesplus();
 
 A=rand(3,2);
 B=rand(2,4);
@@ -64,6 +64,8 @@ dt=etime(clock,t0);
 fprintf('done (%.0f us)\n',1e6*dt);
 E
 EE=C+D
+
+return
 
 clear obj;
 
