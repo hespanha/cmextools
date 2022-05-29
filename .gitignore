@@ -1,12 +1,14 @@
 # assume case sensitive, which is achieved with
 # git config core.ignorecase false
 
+## Automatically generated doc files
+doc/html/
+doc/latex/
+doc/xml/
+doc/sphinx/_build/
+
 ## Apple stuff
 .DS_Store
-
-## Sync files
-.addsubfolders.unison
-.addthisfolder.unison
 
 ## Emacs backups
 auto/
@@ -26,6 +28,10 @@ TODO.txt
 
 ## files still to be fixed up
 examples/templateFromStruct_server.m
+
+## Sync files
+.addsubfolders.unison
+.addthisfolder.unison
 
 
 
