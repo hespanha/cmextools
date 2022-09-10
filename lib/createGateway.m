@@ -1655,6 +1655,11 @@ function writeGateway(cmexname,Sfunction,Cfunction,...
                 elseif ismember(callType,{'dynamicLibrary'})
                     error('checking non-numeric sizes not implemented when calling the library directly without gateways. Use callType=dynamicLibraryWithGateways.');
                 end
+                % check if matrix is full
+                fprintf(fic,'         if issparse(%s)\n',inputs(i).name);
+                fprintf(fic,'           error(''%s: input %s should not be sparse\\n'',class(%s))\n',...
+                        method,inputs(i).name,inputs(i).name);
+                fprintf(fic,'         end\n');
             end
         end
         if ismember(callType,{'dynamicLibrary'})
