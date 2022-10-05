@@ -151,7 +151,8 @@ function [cmd,script]=libraryCompile(compilerOptimization,...
         error('Compilation error %d for dynamic library %s.c\n',rc,dynamicLibrary);
     end
 
-    dfile=dir(sprintf('%s.%s',dynamicLibrary,libraryExtension));
+    dfile=sprintf('%s.%s',dynamicLibrary,libraryExtension);
+    dfile=dir(dfile);
     statistics.dFileSize=dfile.bytes;
     fprintf('%s = %.3fkB, %s.%s = %.3fkB  (%.3f sec)\n',...
             CfunctionsSource,cfile.bytes/1024,...
