@@ -6,6 +6,8 @@ function out=findSuiteSparse();
 
     out=struct('include_paths',{{}},'library_paths',{{}},'libraries',{{}});
 
+    return % should test if umfpack is working
+
     paths=which('umfpack');
     %paths='/Users/hespanha/GitHub/tenscalc/TimDavis/SuiteSparse/UMFPACK/MATLAB/umfpack.m';
     if ~isempty(paths)
